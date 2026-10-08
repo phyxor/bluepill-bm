@@ -1,14 +1,7 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # Bare blink application
 
-`bare-blink` is the first direct-register application in this project. It blinks
-the board LED connected to PC13, which means Port C pin 13.
+`bare-blink` is the first direct-register application in this project. It
+blinks the board LED connected to PC13, which means Port C pin 13.
 
 On most Blue Pill boards this LED is active-low: driving PC13 low turns the LED
 on, and driving PC13 high turns the LED off.
@@ -69,10 +62,10 @@ GPIOC_CRH |= GPIO_CFG(LED_PIN, GPIO_MODE_OUTPUT_2MHZ, GPIO_CNF_OUTPUT_PP);
 
 That selects:
 
-| Field | Value | Meaning |
-| --- | --- | --- |
-| `MODE13[1:0]` | `0b10` | Output mode, max speed 2 MHz |
-| `CNF13[1:0]` | `0b00` | General-purpose push-pull output |
+| Field         | Value  | Meaning                          |
+| ------------- | ------ | -------------------------------- |
+| `MODE13[1:0]` | `0b10` | Output mode, max speed 2 MHz     |
+| `CNF13[1:0]`  | `0b00` | General-purpose push-pull output |
 
 The configuration registers and push-pull mode are summarized in
 [GPIO Peripheral](../peripherals/gpio.md).
@@ -88,12 +81,12 @@ GPIOC_ODR ^= GPIO_PIN(LED_PIN);
 For an active-low LED:
 
 | PC13 level | LED state |
-| --- | --- |
-| Low | On |
-| High | Off |
+| ---------- | --------- |
+| Low        | On        |
+| High       | Off       |
 
-The GPIO reference page also summarizes the safer set/reset register, `BSRR`, in
-[Registers You Use Most](../peripherals/gpio.md#registers-you-use-most).
+The GPIO reference page also summarizes the safer set/reset register, `BSRR`,
+in [Registers You Use Most](../peripherals/gpio.md#registers-you-use-most).
 
 ## Delay loop
 
@@ -107,8 +100,8 @@ static void delay(volatile uint32_t count) {
 }
 ```
 
-It repeatedly executes `nop`, which consumes CPU cycles so the LED state remains
-visible before the next toggle.
+It repeatedly executes `nop`, which consumes CPU cycles so the LED state
+remains visible before the next toggle.
 
 This loop is useful for a first example, but it is not an accurate timer. Later
 examples can use SysTick or a hardware timer.

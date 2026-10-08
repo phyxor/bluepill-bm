@@ -1,10 +1,3 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # Memory map
 
 Target device: `STM32F103C8T6` (`STM32F103x8`, medium-density, 64 KiB Flash, 20
@@ -19,8 +12,8 @@ contains the complete memory map, including peripherals.
 
 ## Top-level Cortex-M3 address space
 
-The processor has a fixed memory map that provides up to 4 GiB of
-addressable memory. The memory map in the
+The processor has a fixed memory map that provides up to 4 GiB of addressable
+memory. The memory map in the
 [ARM Cortex-M3 Generic User Guide](../../refs/arm-cortex-m3-generic-user-guide.pdf)
 can be found in sections 2.2 and 4.1:
 
@@ -117,8 +110,8 @@ APB/AHB peripherals.
 
 The device's peripheral space starts at `0x4000_0000`. Peripheral registers are
 grouped by bus. Peripheral clocks are disabled after reset except SRAM and the
-Flash interface. Enable the peripheral's clock in `RCC_AHBENR`, `RCC_APB2ENR`, or
-`RCC_APB1ENR` before using it.
+Flash interface. Enable the peripheral's clock in `RCC_AHBENR`, `RCC_APB2ENR`,
+or `RCC_APB1ENR` before using it.
 
 #### APB1 peripherals
 

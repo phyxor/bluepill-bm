@@ -60,10 +60,13 @@ theme:
     repo: fontawesome/brands/github
 
 extra_javascript:
+  - assets/pinout-model.js
+  - assets/pinout-dashboard.js
   - assets/clock-model.js
   - assets/clock-calculator.js
 
 extra_css:
+  - assets/pinout-dashboard.css
   - assets/clock-calculator.css
 
 markdown_extensions:

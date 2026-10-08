@@ -1,0 +1,63 @@
+/* Copyright (C) 2026 Phyxor Microsystems
+ * SPDX-FileContributor: Pablo Palazon
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+#pinout-dashboard { margin: 1.5rem 0; }
+.pinout-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pinout-controls .pinout-toolbar { justify-content: center; }
+.pinout-toolbar button { padding: .4rem .7rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; cursor: pointer; }
+.pinout-toolbar button:hover { background: var(--md-default-fg-color--lightest); }
+.pinout-summary, .pinout-info { padding: .7rem; margin: .7rem 0; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; }
+.pinout-summary { border-left: 5px solid #16856b; }
+.pinout-summary.has-conflicts { border-left-color: #c82737; }
+.pinout-summary p { margin: .2rem 0; }
+.pinout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: .7rem; align-items: start; }
+.pinout-drawing { min-width: 0; overflow-x: auto; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; background: #fafcff; }
+.pinout-controls { min-width: 0; min-height: 0; height: clamp(420px, 75vh, 760px); overflow-y: auto; overscroll-behavior-y: contain; padding: 0 .5rem .5rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; }
+.pinout-controls > h3 { margin-top: .5rem; }
+.pinout-drawing svg { display: block; width: 100%; min-width: 720px; color: #152434; }
+.pinout-drawing text { font-family: sans-serif; font-size: 15px; fill: #152434; }
+.pinout-drawing .pinout-title { font-size: 24px; font-weight: bold; }
+.pinout-drawing .pinout-board { fill: #17629d; stroke: #0f416c; stroke-width: 3; }
+.pinout-drawing .pinout-metal { fill: #d4dce3; stroke: #617485; stroke-width: 2; }
+.pinout-drawing .pinout-chip { fill: #25303b; stroke: #526272; stroke-width: 3; }
+.pinout-drawing .pinout-board-text { fill: white; }
+.pinout-drawing .pinout-led { fill: #6fce5a; }
+.pinout-drawing .pinout-number { fill: white; font-size: 14px; }
+.pinout-drawing .pinout-badge { font-size: 13px; }
+.pinout-drawing .pinout-signals { font-size: 14px; }
+.pinout-wire { stroke: #637789; stroke-width: 2; }
+.pinout-pin { cursor: pointer; }
+.pinout-pin-box { fill: #f0f3f6; stroke: #6f7f8e; stroke-width: 1.5; }
+.pinout-pin[data-state="occupied"] .pinout-pin-box { fill: #b1e7d7; stroke: #08745b; }
+.pinout-pin[data-state="conflict"] .pinout-pin-box { fill: #ffc9ce; stroke: #bb1428; stroke-width: 3; }
+.pinout-pin[data-state="conflict"] .pinout-signals { fill: #a00d20; font-weight: bold; }
+.pinout-pin[data-state="fixed"] .pinout-pin-box { fill: #ffe9ab; stroke: #987620; }
+.pinout-pin.is-selected .pinout-pin-box, .pinout-pin:focus .pinout-pin-box { stroke: #1747bd; stroke-width: 4; }
+.pinout-controls details { border: 1px solid var(--md-default-fg-color--lighter); margin: .5rem 0; padding: .6rem; border-radius: .25rem; }
+.pinout-controls summary { cursor: pointer; font-weight: bold; }
+.pinout-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .6rem; margin-top: .7rem; }
+.pinout-controls fieldset { margin: 0; padding: .6rem; border: 1px solid var(--md-default-fg-color--lighter); min-width: 0; }
+.pinout-controls legend { font-weight: bold; padding: 0 .25rem; }
+.pinout-controls label { display: flex; align-items: center; gap: .4rem; margin: .25rem 0; font-size: .75rem; }
+.pinout-controls input { accent-color: #16856b; width: 1rem; height: 1rem; }
+.pinout-controls select { background: var(--md-default-bg-color); color: var(--md-default-fg-color); border: 1px solid var(--md-default-fg-color--lighter); padding: .2rem; max-width: 100%; }
+.pinout-controls input:disabled + span { opacity: .5; }
+.pinout-toolbar button:focus-visible, .pinout-controls input:focus-visible, .pinout-controls select:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 3px; }
+.pinout-configuration { margin: 1rem 0; padding: .7rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; min-width: 0; }
+.pinout-configuration > h2 { margin-top: 0; }
+.pinout-configuration-settings { display: flex; flex-wrap: wrap; gap: .7rem; }
+.pinout-configuration-settings label { display: flex; flex-direction: column; gap: .3rem; font-size: .75rem; }
+.pinout-configuration-settings select { color: var(--md-default-fg-color); background: var(--md-default-bg-color); border: 1px solid var(--md-default-fg-color--lighter); padding: .3rem; }
+.pinout-table-scroll { overflow-x: auto; }
+.pinout-table-scroll table { width: 100%; font-size: .65rem; }
+.pinout-table-scroll td small { display: block; white-space: nowrap; }
+.pinout-port-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pinout-port-list > div { display: flex; flex-direction: column; gap: .25rem; padding: .5rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; font-size: .7rem; }
+.pinout-configuration-conflict { color: #b21e30; background: #fff0f2; }
+.pinout-configuration-settings select:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .pinout-layout { grid-template-columns: minmax(0, 1fr); }
+  .pinout-controls { height: 24rem; }
+}

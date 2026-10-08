@@ -1,10 +1,3 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # Direct-register C
 
 Direct-register C writes peripheral registers at their memory-mapped addresses.

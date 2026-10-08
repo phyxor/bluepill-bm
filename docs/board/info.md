@@ -1,10 +1,3 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # Board target
 
 ## Overall overview
@@ -20,6 +13,12 @@ flowchart TB
     end
   end
 ```
+
+## Board Pinout Summary
+
+The STM32F103C8T6 uses the medium-density STM32F103x8 pin definition.
+
+![Generic STM32F103 pinout diagram](../assets/img-20260904-094011.png)
 
 ## Blue pill information
 
