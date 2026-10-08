@@ -1,3 +1,10 @@
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 # Build a USART driver from RM0008
 
 This page shows how to turn the STM32F103 reference manual (RM0008) into a
@@ -158,7 +165,7 @@ static int usart2_putchar(int ch)
 
 ## 5. Send `printf()` through USART
 
-`src/newlib_stubs.c` supplies Newlib's `_write()` system call. `printf()`
+`system/newlib_stubs.c` supplies Newlib's `_write()` system call. `printf()`
 ultimately calls `_write()`, which sends each byte to the weak
 `board_putchar(int ch)` symbol. If no driver defines that symbol, `_write()`
 returns `-1` with `errno` set to `ENOSYS`.

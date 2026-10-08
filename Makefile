@@ -1,8 +1,13 @@
+# Copyright (C) 2026 Phyxor Microsystems
+# SPDX-FileContributor: Pablo Palazon
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 APP ?= bare-blink
 PROJECT := bluepill-$(APP)
 
 BUILD_DIR := build
-SRC_DIR := src
+SYSTEM_DIR := system
 APP_DIR := apps/$(APP)
 CMSIS_DRIVER_DIR := drivers/cmsis
 LINKER_SCRIPT := linker/STM32F103C8TX_FLASH.ld
@@ -13,6 +18,9 @@ CMSIS_DEVICE_INC := vendor/STM32CubeF1/Drivers/CMSIS/Device/ST/STM32F1xx/Include
 CC := arm-none-eabi-gcc
 OBJCOPY := arm-none-eabi-objcopy
 SIZE := arm-none-eabi-size
+NM := arm-none-eabi-nm
+OBJDUMP := arm-none-eabi-objdump
+READELF := arm-none-eabi-readelf
 GDB := arm-none-eabi-gdb
 OPENOCD := openocd
 
@@ -23,13 +31,17 @@ ASFLAGS := $(COMMON_FLAGS) -x assembler-with-cpp
 LDFLAGS := $(CPU_FLAGS) -T$(LINKER_SCRIPT) -nostartfiles -Wl,--gc-sections -Wl,-Map=$(BUILD_DIR)/$(PROJECT).map --specs=nano.specs --specs=nosys.specs
 LDLIBS := -lm
 
-# Vendor CMSIS headers are only visible to applications named cmsis-*.
-# Bare-register applications stay limited to the local include/ directory.
+CMSIS_CFLAGS := -I$(CMSIS_CORE_INC) -I$(CMSIS_DEVICE_INC) -DUSE_CMSIS -DSTM32F103xB
+
+# The shared system runtime always uses CMSIS. Bare-register applications stay
+# limited to local headers.
+SYSTEM_CFLAGS := $(CFLAGS) $(CMSIS_CFLAGS)
+
 ifneq ($(filter cmsis-%,$(APP)),)
-CFLAGS += -I$(CMSIS_CORE_INC) -I$(CMSIS_DEVICE_INC) -I$(CMSIS_DRIVER_DIR) -DUSE_CMSIS -DSTM32F103xB
+ CFLAGS += $(CMSIS_CFLAGS) -I$(CMSIS_DRIVER_DIR)
 endif
 
-C_SOURCES := $(wildcard $(SRC_DIR)/*.c)
+C_SOURCES := $(wildcard $(SYSTEM_DIR)/*.c)
 C_SOURCES += $(wildcard $(APP_DIR)/*.c)
 ifneq ($(filter cmsis-%,$(APP)),)
 C_SOURCES += $(wildcard $(CMSIS_DRIVER_DIR)/*.c)
@@ -47,12 +59,16 @@ ELF := $(BUILD_DIR)/$(PROJECT).elf
 BIN := $(BUILD_DIR)/$(PROJECT).bin
 HEX := $(BUILD_DIR)/$(PROJECT).hex
 
-.PHONY: all clean flash openocd debug-server debug size
+.PHONY: all clean flash openocd debug-server debug size nm objdump readelf
 
 all: $(ELF) $(BIN) $(HEX) size
 
 $(ELF): $(OBJECTS) $(LINKER_SCRIPT)
 	$(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $@
+
+$(BUILD_DIR)/system/%.o: system/%.c
+	mkdir -p $(dir $@)
+	$(CC) $(SYSTEM_CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: %.c
 	mkdir -p $(dir $@)
@@ -70,6 +86,15 @@ $(HEX): $(ELF)
 
 size: $(ELF)
 	$(SIZE) $<
+
+nm: $(OBJECTS)
+	$(NM) -n $(OBJECTS)
+
+objdump: $(ELF)
+	$(OBJDUMP) -h $<
+
+readelf: $(ELF)
+	$(READELF) -S $<
 
 flash: $(ELF)
 	$(OPENOCD) -f $(OPENOCD_CFG) -c "program $(ELF) verify reset exit"

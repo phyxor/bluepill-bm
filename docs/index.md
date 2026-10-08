@@ -1,134 +1,74 @@
-# Documentation map
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
 
-This documentation has one purpose: show how to move from authoritative hardware
-documents to a working C application. The STM32F103C8T6 Blue Pill is the worked
-example. The workflow is intended to apply to other microcontrollers.
+SPDX-License-Identifier: BSD-3-Clause
+-->
 
-## Read the documentation in this order
+# Blue Pill Bare-Metal
 
-```text
-1. workflow
-   identify the target and read the source documents
-        |
-        v
-2. targets/stm32f103c8t6
-   record the facts for this MCU and board
-        |
-        v
-3. architecture
-   connect the processor reset path to the MCU memory and clock model
-        |
-        v
-4. development-models
-   choose how C will access the hardware
-        |
-        v
-5. peripherals
-   implement one hardware block from its reference-manual procedure
-        |
-        v
-6. applications
-   prove the procedure with a small program
-        |
-        v
-7. project
-   build, flash, debug, and inspect the result
-```
+This site explains bare-metal development for the Blue Pill board with an
+STM32F103C microcontroller. Follow the documentation to identify the hardware,
+configure peripherals, and build applications.
 
-The [workflow overview](workflow/overview.md) is the first page to read. The
-[bring-up checklist](workflow/bring-up-checklist.md) is the short verification
-path after the target profile and linker setup exist.
+## Getting Started
 
-## Directory ownership
+1. Read the [board information](board/info.md) and
+   [pinout](board/pinout.md).
+2. Build and test the [bare blink application](apps/bare-blink.md).
+3. Read [Build Process](environment/build.md) and
+   [Flash and Debug](environment/flash-debug.md) before programming the board.
 
-Each directory answers a different question. Keep a fact in one owner and link to
-it from other pages.
+## Project Structure
 
-| Directory | Question | Example |
-|---|---|---|
-| `workflow/` | What process works for a new MCU? | [Source documents](workflow/source-documents.md) |
-| `targets/` | What is true for this MCU, package, and board? | [Target profile](targets/stm32f103c8t6/target-profile.md) |
-| `architecture/` | How does the processor boot and how is firmware placed in memory? | [Reset and interrupts](architecture/reset-and-interrupts.md) |
-| `development-models/` | Which C software layer is being used? | [C development models](development-models/abstraction-layers.md) |
-| `peripherals/` | How is an STM32F1 hardware block configured? | [USART](peripherals/usart.md) |
-| `applications/` | Which small program proves the concept? | [Bare blink](applications/bare-blink.md) |
-| `project/` | How does this repository build and debug it? | [Build process](project/build-process.md) |
-| `reference/` | Where are shared terms defined? | [Acronyms](reference/acronyms.md) |
-| `refs/` | Which primary documents support the claims? | Local PDF manuals and datasheets |
+- `apps/` contains example applications.
+- `drivers/` contains project driver code.
+- `include/` contains local headers for direct-register applications.
+- `system/` contains startup and runtime code.
+- `linker/` contains linker scripts.
+- `openocd/` contains the board and debug-probe configuration.
+- `docs/` contains this documentation.
 
-## Workflow outputs
+## Development Workflow
 
-The workflow produces these artifacts in order:
+1. Identify the board, microcontroller, pins, memory, and clock requirements.
+2. Read the system documentation for the memory map, reset path, linker script,
+   and startup code.
+3. Configure a peripheral and verify it with a small application.
+4. Build the firmware, flash it with an ST-Link probe, and debug it through SWD.
 
-```text
-source documents
-  -> target profile
-  -> memory map and pin plan
-  -> clock assumptions
-  -> linker script
-  -> startup and vector table
-  -> register definitions
-  -> peripheral procedure
-  -> minimal application
-  -> verified firmware image
-```
+## Build, Flash, and Debug
 
-The project-specific outputs are implemented by these paths:
-
-| Output | Implementation |
-|---|---|
-| Target memory layout | `linker/STM32F103C8TX_FLASH.ld` |
-| Startup and vector table | `src/startup_stm32f103.c` |
-| Minimal clock setup | `src/system_stm32f103.c` |
-| Direct-register definitions | `include/stm32f103c8t6.h` |
-| Direct-register application | `apps/bare-blink/main.c` |
-| CMSIS drivers | `drivers/cmsis/` |
-| Build selection | `Makefile` |
-
-The source files are authoritative for current repository behavior. The
-documentation explains the hardware reasoning, assumptions, and verification
-method around those files.
-
-## Choose an entry point
-
-| If you need to... | Start with... |
-|---|---|
-| Learn how to approach a new MCU | [Workflow overview](workflow/overview.md) |
-| Decide which manual to read | [Source documents](workflow/source-documents.md) |
-| Identify the Blue Pill target | [Target profile](targets/stm32f103c8t6/target-profile.md) |
-| Create a linker script | [Memory map](targets/stm32f103c8t6/memory-map.md), then [linker and startup](architecture/linker-startup.md) |
-| Understand reset and `main` | [Reset and interrupts](architecture/reset-and-interrupts.md) |
-| Add a peripheral | [Extract hardware facts](workflow/extracting-hardware-facts.md), then the relevant page in `peripherals/` |
-| Compare C programming layers | [C development models](development-models/abstraction-layers.md) |
-| Build or debug this repository | [Build process](project/build-process.md) |
-
-## Current development layers
-
-The application prefix identifies the software layer:
-
-| Prefix | Layer | Headers |
-|---|---|---|
-| `bare-*` | Direct-register C | Local project headers only |
-| `cmsis-*` | CMSIS | Pinned STM32CubeF1 CMSIS headers |
-| `ll-*` | STM32 LL | Reserved for future examples |
-| `hal-*` | STM32 HAL | Reserved for future examples |
-
-The Makefile keeps these layers separate. Do not add vendor include paths to a
-`bare-*` application.
-
-## Repository commands
 
 ```sh
 make
-make APP=bare-blink
+make APP=app-name
 make APP=cmsis-blink
-make flash
-make openocd
-make debug
+make APP=cmsis-blink flash
+make APP=cmsis-blink openocd
+make APP=cmsis-blink debug
+make APP=cmsis-blink debug-server
 ```
 
-After changing documentation or navigation, run:
+## Documentation Map
 
-```sh
-mise exec -- mkdocs build --strict
-```
+- [Board](board/info.md): Board hardware and package pinout.
+- [System](system/memory-map.md): Memory, reset, startup, linker, and clock
+  documentation.
+- [Peripherals](peripherals/gpio.md): GPIO, ADC, timers, USART, and SysTick.
+- [Development Models](dev-models/abstraction-layers.md): Direct-register C and
+  CMSIS development.
+- [Applications](apps/bare-blink.md): Small hardware experiments.
+- [Environment](environment/development.md): Development tools, build, flash,
+  debug, and documentation procedures.
+
+## Reference Manuals
+
+Use these primary documents for device facts:
+
+- [Reference Manual: STM32F1](refs/stm32f103x8-reference.pdf): Describes
+  STM32F1 registers and peripherals.
+- [Datasheet: STM32F103C](refs/stm32f103x8-datasheet.pdf): Lists device
+  features, limits, and pin assignments.
+- [ARM User Guide: Cortex-M3](refs/arm-cortex-m3-generic-user-guide.pdf):
+  Describes the Cortex-M3 processor and its core peripherals.

@@ -1,3 +1,10 @@
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 # General-purpose timers (TIM)
 
 TIM peripherals count clock ticks or external edges independently of the CPU.
@@ -101,6 +108,9 @@ f_TIM = 2 * PCLKx   when the corresponding APB prescaler is greater than 1
 The current project starts from 8 MHz HSI with both APB prescalers equal to 1,
 so `TIM1`, `TIM2`, `TIM3`, and `TIM4` initially run from an 8 MHz timer clock.
 Recalculate timing values whenever the RCC clock tree changes.
+
+Use the [clock dashboard](../system/clock-dashboard.md#interrupt-targets) to
+calculate `PSC` and `ARR` from a target period and a custom clock configuration.
 
 ## GPIO pins and remapping
 

@@ -1,3 +1,8 @@
+# Copyright (C) 2026 Phyxor Microsystems
+# SPDX-FileContributor: Pablo Palazon
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 version = 1
 
 [[annotations]]
@@ -20,7 +25,7 @@ path = [
     "mkdocs.yml",
     "openocd/bluepill.cfg",
     "requirements.txt",
-    "src/.clangd",
+    "system/.clangd",
     "vendor/README.md",
 ]
 precedence = "override"
@@ -30,7 +35,7 @@ SPDX-License-Identifier = "BSD-3-Clause"
 [[annotations]]
 path = [
   "docs/refs/*.pdf",
-  "src/asm/startup_stm32f103c8tx.s"
+  "system/asm/startup_stm32f103c8tx.s"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright holders named in each document"

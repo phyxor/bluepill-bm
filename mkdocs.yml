@@ -1,56 +1,56 @@
+# Copyright (C) 2026 Phyxor Microsystems
+# SPDX-FileContributor: Pablo Palazon
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 site_name: Blue Pill Bare-Metal
-copyright: Copyright &copy; 2026 Pablo Palazón
+copyright: Copyright &copy; 2026 Phyxor Microsystems
 docs_dir: docs
 
 extra:
   generator: true
+  homepage: https://www.phyxor.com
 
 nav:
   - Home: index.md
-  - Workflow:
-      - Overview: workflow/overview.md
-      - Source documents: workflow/source-documents.md
-      - Identify the target: workflow/target-identification.md
-      - Extract hardware facts: workflow/extracting-hardware-facts.md
-      - Bring-up checklist: workflow/bring-up-checklist.md
-  - Architecture:
-      - Memory map: targets/stm32f103c8t6/memory-map.md
-      - Reset and interrupts: architecture/reset-and-interrupts.md
-      - Clocks: architecture/clocks.md
-      - Linker and startup: architecture/linker-startup.md
-  - STM32F103C8T6:
-      - Target profile: targets/stm32f103c8t6/target-profile.md
-      - Board: targets/stm32f103c8t6/board.md
-      - Pinout: targets/stm32f103c8t6/pinout.md
-      - Device restrictions and errata: targets/stm32f103c8t6/errata.md
-  - Project:
-      - Build process: project/build-process.md
+  - Board:
+    - Info: board/info.md
+    - Pinouts: board/pinout.md
+  - System:
+      - Memory Map: system/memory-map.md
+      - Linker and startup: system/linker-startup.md
+      - Reset and interrupts: system/reset-and-interrupts.md
+      - Clock Tree: system/clocks.md
+      - Clock Calculator: system/clock-dashboard.md
   - Peripherals:
       - GPIO: peripherals/gpio.md
       - ADC: peripherals/adc.md
       - Timers: peripherals/timers.md
       - USART: peripherals/usart.md
       - SysTick: peripherals/systick.md
+  - Dev models:
+      - C development models: dev-models/abstraction-layers.md
+      - Direct-register C: dev-models/direct-registers.md
+      - CMSIS: dev-models/cmsis.md
   - Applications:
-      - Bare blink: applications/bare-blink.md
-  - Development models:
-      - C development models: development-models/abstraction-layers.md
-      - Direct-register C: development-models/direct-registers.md
-      - CMSIS: development-models/cmsis.md
+      - Bare blink: apps/bare-blink.md
+  - Environment:
+      - Development: environment/development.md
+      - Build: environment/build.md
+      - Flash, Debug & OpenOCD: environment/flash-debug.md
+      - Documentation: environment/documentation.md
   - Reference:
       - Acronyms: reference/acronyms.md
-      - PDFs:
-          - CKS32F103x Datasheet: refs/CKS32F103x.pdf
-          - CKS32F103x Reference Manual: refs/CKS32F103x8-reference-manual.pdf
-          - STM32F103x8 Datasheet: refs/stm32f103x8-datasheet.pdf
-          - STM32F103x8 Reference Manual: refs/stm32f103x8-reference.pdf
-          - ARM Cortex-M3 User Guide: refs/arm-cortex-m3-generic-user-guide.pdf
+      - STM32F103x8 Datasheet: refs/stm32f103x8-datasheet.pdf
+      - STM32F103x8 Reference Manual: refs/stm32f103x8-reference.pdf
+      - ARM Cortex-M3 User Guide: refs/arm-cortex-m3-generic-user-guide.pdf
 
 theme:
   name: material
+  logo: assets/phyxor-icon.svg
   palette:
-    primary: blue grey
-    accent: orange
+    primary: black
+    accent: amber
   font:
     text: Saira
     code: JetBrains Mono
@@ -58,6 +58,13 @@ theme:
     - content.code.copy
   icon:
     repo: fontawesome/brands/github
+
+extra_javascript:
+  - assets/clock-model.js
+  - assets/clock-calculator.js
+
+extra_css:
+  - assets/clock-calculator.css
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -70,8 +77,19 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid_custom
+          format: !!python/name:mermaid2.fence_mermaid
 
 plugins:
   - search
-  - mermaid2
+  - mermaid2:
+      version: '12.1.0'
+      arguments:
+        theme: default
+        layout: elk
+        elk:
+          mergeEdges: false
+          nodePlacementStrategy: BRANDES_KOEPF
+          considerModelOrder: NODES_AND_EDGES
+          forceNodeModelOrder: false
+          cycleBreakingStrategy: GREEDY_MODEL_ORDER
+          keepEntryNodeOnTop: true

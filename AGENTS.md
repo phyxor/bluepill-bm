@@ -1,3 +1,10 @@
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 # AGENTS.md
 
 Guidance for AI agents working in this STM32 Blue Pill bare-metal project.
@@ -6,8 +13,8 @@ Guidance for AI agents working in this STM32 Blue Pill bare-metal project.
 
 This repository is a learning project for bare-metal STM32F103C8T6 development
 without STM32CubeIDE. Keep the project small, explicit, and educational. Prefer
-code and docs that explain the hardware path from reset, linker script, startup
-code, registers, and peripherals.
+code that explains the hardware path from reset, linker script, startup code,
+registers, and peripherals.
 
 Target hardware:
 
@@ -21,7 +28,7 @@ Target hardware:
 
 ## Current Tooling
 
-Use the existing Makefile and docs tooling.
+Use the existing Makefile tooling.
 
 Common build commands:
 
@@ -40,16 +47,6 @@ make openocd
 make debug
 ```
 
-Docs verification:
-
-```sh
-mise exec -- mkdocs build --strict
-```
-
-The strict MkDocs build currently emits an informational Material for MkDocs
-2.0 warning. That warning is known and is not a project failure if the build
-exits successfully.
-
 ## Repository Layout
 
 Important paths:
@@ -57,64 +54,18 @@ Important paths:
 - `apps/`: one application per directory
 - `apps/bare-blink/`: direct-register LED blink example
 - `apps/cmsis-blink/`: CMSIS-based LED blink example
-- `src/`: shared runtime code linked into applications
-- `src/startup_stm32f103.c`: active startup and vector table
-- `src/system_stm32f103.c`: current minimal system initialization
-- `src/newlib_stubs.c`: minimal Newlib syscall stubs
+- `system/`: shared runtime code linked into applications
+- `system/startup_stm32f103.c`: active startup and vector table
+- `system/system_stm32f103.c`: current minimal system initialization
+- `system/newlib_stubs.c`: minimal Newlib syscall stubs
 - `include/stm32f103c8t6.h`: local direct-register header for `bare-*` apps
 - `drivers/cmsis/`: project CMSIS-oriented driver code
-- `src/asm/startup_stm32f103c8tx.s`: reference assembly startup, not linked by
+- `system/asm/startup_stm32f103c8tx.s`: reference assembly startup, not linked by
   default
 - `linker/STM32F103C8TX_FLASH.ld`: active linker script
 - `openocd/bluepill.cfg`: OpenOCD config for this board/probe
-- `docs/`: MkDocs source files
-- `docs/refs/`: local PDF datasheets and reference manuals
 - `vendor/STM32CubeF1/`: pinned STM32CubeF1 Git submodule
 - `build/`: generated build output; do not edit by hand
-- `site/`: generated MkDocs output; do not edit by hand
-
-## Documentation architecture
-
-The documentation uses four boundaries. Keep each fact in its owning section
-and link to it from summaries instead of copying it:
-
-- `docs/workflow/`: reusable microcontroller-development workflow,
-  source-document roles, target identification, hardware-fact extraction, and
-  bring-up checks
-- `docs/architecture/`: processor and runtime concepts such as reset,
-  interrupts, clocks, the linker script, and startup code
-- `docs/targets/stm32f103c8t6/`: STM32F103C8T6 and Blue Pill facts, including
-  the memory map, package pinout, board wiring, and device restrictions
-- `docs/development-models/`: direct-register C, CMSIS, and comparisons with
-  LL, HAL, and RTOS development
-- `docs/peripherals/`: peripheral concepts and STM32F1 configuration procedures
-- `docs/applications/`: small experiments that prove one hardware concept
-- `docs/project/`: repository-specific build, flash, and debug procedures
-- `docs/reference/`: shared terminology and reference material
-
-The workflow starts with the datasheet, microcontroller reference manual,
-processor manual, errata, and board schematic. It then produces a target
-profile, memory map, linker script, startup code, register definitions, a
-minimal application, and verification steps. The STM32F103C8T6 project is the
-worked example, not the definition of the general workflow.
-
-When documenting a new peripheral, identify its bus and clock, reset state,
-pins, alternate functions, registers, configuration order, clock assumption,
-status flags, interrupts, and a minimal verification method. Use the existing
-peripheral pages as examples.
-
-## Documentation writing rules
-
-Load the `simple-english` skill before writing or substantially revising
-technical documentation. Use short sentences, active voice, defined terms,
-clear commands, and simple headings. Load the `writing-for-agents` skill before
-modifying `AGENTS.md`, a skill, or any other instruction document. Run the
-strict MkDocs build after changing docs or navigation.
-
-Prefer short conceptual pages over copied manual chapters. State whether a
-claim comes from the processor manual, MCU reference manual, datasheet, errata,
-board documentation, source code, or a verified command. Do not silently apply
-an ST device fact to a compatible clone.
 
 ## Application Naming Rules
 
@@ -206,7 +157,7 @@ This avoids clangd guessing Objective-C++ for standalone or empty `.h` files.
 
 ## Startup And Linker Rules
 
-The active startup file is `src/startup_stm32f103.c`.
+The active startup file is `system/startup_stm32f103.c`.
 
 It is responsible for:
 
@@ -234,56 +185,12 @@ RAM:   0x20000000, 20K
 
 ## Clock Assumptions
 
-`src/system_stm32f103.c` currently keeps the chip on its simple default clock
+`system/system_stm32f103.c` currently keeps the chip on its simple default clock
 setup. It does not yet configure HSE, PLL, 72 MHz system clock, flash wait
 states, or bus prescalers.
 
 When adding timing-sensitive code, state the assumed clock clearly. SysTick
-docs and examples should not silently assume 72 MHz until clock setup exists.
-
-## Documentation Style
-
-Docs are written for learning. Prefer concise conceptual pages over exhaustive
-manual rewrites.
-
-For peripheral docs, follow the style of `docs/gpio.md` and `docs/systick.md`:
-
-- Start with a short plain-English explanation
-- Add a `Basic Idea` section
-- Add a `Registers You Use Most` section
-- Include a small practical C example when useful
-- Add practical hardware or usage notes
-- End with `Reference Manual Pages`
-- Link to project-local PDFs in `docs/refs/`
-
-Use direct PDF page anchors when referencing RM0008:
-
-```markdown
-[RM0008 page 159](refs/stm32f103x8-reference.pdf#page=159)
-```
-
-Known useful RM0008 anchors:
-
-- GPIO and AFIO chapter start: `refs/stm32f103x8-reference.pdf#page=159`
-- GPIO port structure and modes: `refs/stm32f103x8-reference.pdf#page=160`
-- GPIO mode table: `refs/stm32f103x8-reference.pdf#page=161`
-- GPIO behavior details: `refs/stm32f103x8-reference.pdf#page=163`
-- GPIO registers: `refs/stm32f103x8-reference.pdf#page=171`
-- `RCC_APB2ENR`: `refs/stm32f103x8-reference.pdf#page=112`
-- AFIO remapping overview: `refs/stm32f103x8-reference.pdf#page=175`
-- `AFIO_MAPR`: `refs/stm32f103x8-reference.pdf#page=184`
-- SysTick clock source note: `refs/stm32f103x8-reference.pdf#page=93`
-- SysTick calibration value: `refs/stm32f103x8-reference.pdf#page=197`
-- SysTick vector-table entry: `refs/stm32f103x8-reference.pdf#page=204`
-
-RM0008 contains STM32-specific SysTick information, but the bit-level SysTick
-register definition belongs to ARM Cortex-M3 core documentation.
-
-After changing docs or nav, run:
-
-```sh
-mise exec -- mkdocs build --strict
-```
+code and examples should not silently assume 72 MHz until clock setup exists.
 
 ## OpenOCD Notes
 
@@ -322,10 +229,6 @@ make APP=cmsis-blink
 For changes that affect shared runtime, startup, linker, or Makefile behavior,
 build both bare and CMSIS examples if available.
 
-For docs changes, run the strict MkDocs build. If a command cannot be run
-because the toolchain is missing or hardware is unavailable, report that
-clearly.
-
 ## Current Useful Next Steps
 
 Likely future project additions:
@@ -335,4 +238,3 @@ Likely future project additions:
 3. Configure the STM32F103 clock tree for 72 MHz.
 4. Add more direct-register peripheral examples before introducing higher
    layers.
-5. Keep improving docs with local reference-manual links.

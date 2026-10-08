@@ -1,3 +1,10 @@
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 # SysTick timer
 
 SysTick is a small timer built into the ARM Cortex-M3 core. It is not an STM32
@@ -29,6 +36,9 @@ For example, if the core clock is `8 MHz` and you want a 1 ms tick, use:
 ```text
 reload = 8_000_000 / 1000 - 1 = 7999
 ```
+
+Use the [clock dashboard](../system/clock-dashboard.md#interrupt-targets) to
+calculate `RELOAD` from a target period and the selected HCLK or HCLK / 8 source.
 
 ## Registers you use most
 
