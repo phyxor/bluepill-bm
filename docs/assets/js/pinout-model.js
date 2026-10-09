@@ -39,7 +39,7 @@
   add("Debug", "Board / debug", { SWDIO: "PA13", SWCLK: "PA14", JTDI: "PA15", JTDO: "PB3", JNTRST: "PB4" },
     { "SWD only": { JTDI: null, JTDO: null, JNTRST: null } }, true);
   add("HSE", "Board / debug", { OSC_IN: "PD0", OSC_OUT: "PD1" }, {}, true);
-  add("LSE", "Board / debug", { OSC32_IN: "PC14", OSC32_OUT: "PC15" }, {}, true);
+  add("LSE", "Board / debug", { OSC32_IN: "PC14", OSC32_OUT: "PC15" });
   add("LED", "Board / debug", { "active-low LED": "PC13" });
   add("MCO", "Board / debug", { MCO: "PA8" });
   add("Wakeup", "Board / debug", { WKUP: "PA0" });

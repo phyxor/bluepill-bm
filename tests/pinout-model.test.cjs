@@ -67,6 +67,10 @@ test("capabilities distinguish FT digital inputs, timer remaps, and limited-driv
 
 test("default selections are independent and every mapped signal is bonded", () => {
   const state = model.defaults();
+  assert.equal(state.LSE.enabled, false);
+  assert.equal(model.assignments(state).pins.PC14, undefined);
+  assert.equal(model.assignments(state).pins.PC15, undefined);
+  assert.ok(!model.configurationSummary(state).clocks.some(c => c.bit === "LSEON"));
   assert.deepEqual(model.assignments(state).errors, []);
   state.Debug.enabled = false;
   assert.equal(model.defaults().Debug.enabled, true);
@@ -179,6 +183,7 @@ test("timer internal counting needs no GPIO; capture and complementary outputs d
 
 test("hardware-controlled pins need no GPIO clocks, and PC13 respects its output limit", () => {
   const state = model.defaults();
+  state.LSE.enabled = true;
   state.USB.enabled = true;
   let plan = model.configurationSummary(state);
   assert.deepEqual(plan.ports, []);

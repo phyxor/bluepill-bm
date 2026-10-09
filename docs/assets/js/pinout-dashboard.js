@@ -164,6 +164,7 @@
           });
         }
         toggle();
+        if (p.id === "LSE") html("small", "Cold / backup-domain reset: off. Normal resets preserve RCC_BDCR.LSEON (RM0008 §7.3.9).", field);
         if (Object.keys(p.maps).length) {
           const label = html("label", "Pin mapping ", field);
           const input = html("select", undefined, label);
