@@ -5,10 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/* Widen only the dashboard page; other documentation keeps its normal layout. */
-body:has(#clock-calculator) .md-grid { max-width: 96rem; }
 body:has(#clock-calculator) .md-content { min-width: 0; }
-#clock-calculator { --clock-border: var(--md-default-fg-color--lighter); }
+#clock-calculator { --clock-border: var(--md-default-fg-color--lighter); max-width: 100%; min-width: 0; }
 #clock-calculator .clock-toolbar {
   display: flex;
   flex-wrap: wrap;

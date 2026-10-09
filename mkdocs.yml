@@ -6,6 +6,7 @@
 site_name: Blue Pill Bare-Metal
 copyright: Copyright &copy; 2026 Phyxor Microsystems
 docs_dir: docs
+repo_url: https://github.com/ppalazon/bluepill-bm
 
 extra:
   generator: true
@@ -47,6 +48,7 @@ nav:
 
 theme:
   name: material
+  custom_dir: overrides
   logo: assets/phyxor-icon.svg
   palette:
     primary: black
@@ -55,19 +57,24 @@ theme:
     text: Saira
     code: JetBrains Mono
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
     - content.code.copy
   icon:
     repo: fontawesome/brands/github
 
 extra_javascript:
-  - assets/pinout-model.js
-  - assets/pinout-dashboard.js
-  - assets/clock-model.js
-  - assets/clock-calculator.js
+  - assets/js/navigation-dropdowns.js
+  - assets/js/pinout-model.js
+  - assets/js/pinout-dashboard.js
+  - assets/js/clock-model.js
+  - assets/js/clock-calculator.js
 
 extra_css:
-  - assets/pinout-dashboard.css
-  - assets/clock-calculator.css
+  - assets/css/diagrams.css
+  - assets/css/navigation-dropdowns.css
+  - assets/css/pinout-dashboard.css
+  - assets/css/clock-calculator.css
 
 markdown_extensions:
   - pymdownx.highlight:

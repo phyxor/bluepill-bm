@@ -5,7 +5,7 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { calculate, toC, planRtc, planIwdg, presets } = require("../docs/assets/clock-model.js");
+const { calculate, toC, planRtc, planIwdg, presets } = require("../docs/assets/js/clock-model.js");
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 const hz = (result, name) => result.clocks[name].hz;

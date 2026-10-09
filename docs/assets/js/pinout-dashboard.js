@@ -15,7 +15,7 @@
     function writeText(node, text) {
       node.replaceChildren();
       // Build inline code nodes without interpreting the text as HTML.
-      const identifiers = /\b(?:(?:RCC|AFIO|GPIO[A-D]|PWR|BKP|SPI[12x]|USART[123x]|TIM[1234x])_[A-Z0-9_]+(?:\.[A-Z0-9_]+)?|(?:CNF|MODE)\d*(?:\[\d+:\d+\])?|ODR\d+|(?:USART[123]|SPI[12]|I2C[12]|TIM[1-4]|ADC[12]|ADC12)(?:_[A-Z0-9_]+)?|GPIO[A-D]|P[ABCD]\d+|CRL|CRH|SSM|SSI|PWREN|BKPEN|AFIOEN|USBEN|HSERDY|LSERDY|PLLRDY|ADCCLK)(?:\s*=\s*[01]+)?(?![A-Za-z0-9_])/g;
+      const identifiers = /\b(?:(?:RCC|AFIO|GPIO[A-D]|PWR|BKP|SPI[12x]|USART[123x]|TIM[1234x])_[A-Z0-9_]+(?:\.[A-Z0-9_]+)?|(?:CNF|MODE)\d*(?:\[\d+:\d+\])?|ODR\d+|(?:USART[123]|SPI[12]|I2C[12]|TIM[1-4]|ADC[12]|ADC12)(?:_[A-Z0-9_]+)?|GPIO[A-D]|P[ABCD]\d+|CRL|CRH|SSM|SSI|PWREN|BKPEN|AFIOEN|USBEN|HSERDY|LSERDY|PLLRDY|ADCCLK|VDD|VDDA|VSS|VSSA|VOL|VOH)(?:\s*=\s*[01]+)?(?![A-Za-z0-9_])/g;
       let offset = 0;
       for (const match of text.matchAll(identifiers)) {
         node.append(document.createTextNode(text.slice(offset, match.index)));
@@ -249,6 +249,92 @@
         for (const note of plan.notes) html("li", note, list);
       }
     }
+    function renderPinInfo(result) {
+      info.replaceChildren();
+      const cap = model.capabilities(selected);
+      const functions = model.pinFunctions(selected);
+      const owners = result.pins[selected] || [];
+      const errors = result.errors.filter(error => error.pin === selected
+        || !error.pin && owners.some(owner => ["USB", "CAN"].includes(owner.peripheral)));
+      const locations = pinNodes.filter(node => node.pin === selected).map(node => node.position);
+      html("h3", `${selected}${model.packagePins[selected] ? ` · package pin ${model.packagePins[selected]}` : ""}`, info);
+      html("p", locations.join("; "), info, "pinout-info-location");
+      const grid = html("div", undefined, info, "pinout-info-grid");
+      function card(title, status, value, description, parent = grid) {
+        const node = html("div", undefined, parent, "pinout-info-card");
+        node.dataset.status = status;
+        html("h4", title, node);
+        html("strong", value, node);
+        if (description) html("p", description, node);
+        return node;
+      }
+      const assignment = card("Pin assignment", errors.length ? "negative" : owners.length ? "positive" : "neutral",
+        errors.length ? "! Conflict" : owners.length ? "✓ Occupied" : cap.gpio ? "Available" : "Fixed connection",
+        owners.length ? owners.map(owner => `${owner.label}${owner.optional ? " (optional)" : ""}`).join(" + ")
+          : cap.gpio ? "No active peripheral signals use this pin." : "Supply, ground, or board control connection.");
+      assignment.dataset.feature = "assignment";
+      for (const error of errors) html("p", error.message, assignment);
+      function feature(key, title, supported, yes, no, description) {
+        const node = card(title, supported ? "positive" : "negative", supported ? `✓ ${yes}` : `✕ ${no}`, description);
+        node.dataset.feature = key;
+      }
+      if (cap.gpio) {
+        feature("gpio", "Digital GPIO", true, "Supported", "Not supported", "Input/output use requires the GPIO port clock and releasing any hardware owner.");
+        feature("voltage", "5 V-tolerant input", cap.ft, "Supported", "Not supported", "Tolerance applies to digital inputs only. Analog inputs must stay between 0 V and VDDA.");
+        feature("pwm", "Timer PWM output", cap.pwm, "Supported", "Not supported", cap.pwm
+          ? "Use the listed timer channel. Some channels require remapping and releasing debug pins." : "No timer output is mapped to this pin.");
+        const analog = functions.some(entry => entry.group === "ADC");
+        feature("adc", "Analog input", analog, "Supported", "No ADC channel", analog
+          ? "ADC1 and ADC2 share this external channel. Select analog input with CNF=00 and MODE=00." : "No external ADC input is mapped to this pin.");
+        feature("drive", "GPIO output drive", !cap.warning, "Standard GPIO limits", "⚠ Limited drive", cap.warning
+          ? "Maximum output speed 2 MHz, maximum load 30 pF. Do not use these pins as current sources."
+          : "Select the required output drive limit with MODE; observe the datasheet current and load limits.");
+      }
+      const electrical = card("Current and load limits", cap.warning ? "negative" : cap.gpio ? "positive" : "neutral",
+        cap.warning ? "3 mA shared limit · sink only" : cap.gpio ? "GPIO output ratings" : "Not a GPIO output");
+      electrical.dataset.feature = "electrical";
+      electrical.classList.add("pinout-electrical-card");
+      if (cap.warning) {
+        html("p", "Shared by PC13–PC15; no current sourcing.", electrical);
+        html("p", "Maximum load: 30 pF. Maximum speed: 2 MHz (MODE=10).", electrical);
+      } else if (cap.gpio) {
+        html("p", "Source/sink: 8 mA at VDD = 2.7–3.6 V; 20 mA with relaxed output levels.", electrical);
+        html("p", "Absolute maximum: 25 mA per pin (stress rating).", electrical);
+        const oscillatorPin = ["PD0", "PD1"].includes(selected);
+        const speed = oscillatorPin ? "50" : state.settings.outputSpeed;
+        html("p", speed === "50" ? "Load rating: 30 pF at 50 MHz (VDD = 2.7–3.6 V)."
+          : `Load rating: 50 pF at ${speed} MHz (VDD = 2–3.6 V).`, electrical);
+        if (oscillatorPin) html("p", "GPIO output requires MODE=11 and oscillator remapping.", electrical);
+      } else {
+        html("p", "GPIO current and load limits: not applicable.", electrical);
+      }
+      if (cap.gpio) {
+        html("small", cap.warning ? "Datasheet pin-definition note 5." : "Datasheet tables 7, 37–38; GPIO output ratings.", electrical);
+      }
+      if (selected === "PC13") card("Onboard LED", "positive", "✓ Active-low LED", "PC13 drives the Blue Pill LED. A low output turns it on.");
+      if (["BOOT0", "PB2"].includes(selected)) card("Boot selection", "neutral", selected === "PB2" ? "BOOT1 jumper" : "BOOT0 jumper", "Boot selection is sampled at reset.");
+      html("h4", "Pin functions and related peripherals", info);
+      html("p", "Green feature boxes indicate support; red boxes indicate an unavailable feature or restriction. Peripheral cards show which functions are active on this pin.", info, "pinout-info-legend");
+      const related = html("div", undefined, info, "pinout-peripheral-grid");
+      for (const id of [...new Set(functions.map(entry => entry.peripheral))]) {
+        const entries = functions.filter(entry => entry.peripheral === id);
+        const active = owners.some(owner => owner.peripheral === id);
+        const node = card(entries[0].group === "ADC" ? `ADC1 / ADC2 · ${id}` : id, active ? "positive" : "neutral",
+          active ? "✓ Active on this pin" : "Available · not active", undefined, related);
+        node.dataset.peripheral = id;
+        const list = html("ul", undefined, node);
+        for (const entry of entries) {
+          const item = html("li", undefined, list);
+          const enabled = owners.some(owner => owner.peripheral === id && owner.signal === entry.signal);
+          item.dataset.active = String(enabled);
+          html("code", entry.label, item);
+          item.append(document.createTextNode(`${entry.optional ? " (optional)" : ""}${enabled ? " · active" : ""}`));
+          html("small", entry.mappings.includes("Default") ? "Default pin" : `Remap: ${entry.mappings.join(", ")}`, item);
+          if (entry.optional) html("small", entry.optional, item);
+        }
+      }
+      if (!functions.length) card("Pin function", "neutral", "No alternate peripheral functions", "This pin is a fixed connection or general GPIO without a listed peripheral mapping.", related);
+    }
     function update() {
       const result = model.assignments(state);
       summary.replaceChildren();
@@ -291,17 +377,7 @@
           node.line.setAttribute("lengthAdjust", "spacingAndGlyphs");
         }
       }
-      info.replaceChildren();
-      const cap = model.capabilities(selected);
-      const locations = pinNodes.filter(n => n.pin === selected).map(n => n.position);
-      html("h3", `${selected}${model.packagePins[selected] ? ` · package pin ${model.packagePins[selected]}` : ""}`, info);
-      html("p", locations.join("; "), info);
-      const owners = result.pins[selected] || [];
-      html("p", `Assignments: ${owners.length ? owners.map(o => `${o.label}${o.optional ? " (optional)" : ""}`).join(" + ") : "none"}.`, info);
-      for (const owner of owners.filter(o => o.optional)) html("p", `${owner.label}: ${owner.optional}`, info);
-      html("p", `Functions: ${model.functions(selected).join(", ") || "fixed supply / control connection"}.`, info);
-      if (cap.gpio) html("p", `${cap.ft ? "5 V-tolerant digital input" : "Not 5 V-tolerant"}. Analog inputs must remain between 0 V and VDDA. ${cap.pwm ? "PWM is available through a timer channel; some mappings require remapping and releasing debug pins." : "No timer PWM output on this pin."}`, info);
-      if (cap.warning) html("p", "⚠ PC13–PC15: maximum output speed 2 MHz, maximum load 30 pF. Do not use these pins as current sources. PC13 also connects to the active-low board LED.", info);
+      renderPinInfo(result);
       for (const c of controls) {
         if (c.mapping) c.input.value = state[c.p.id].mapping;
         else if (c.setting) c.input.value = state[c.p.id][c.setting];

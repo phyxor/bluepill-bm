@@ -112,16 +112,25 @@
     }
     return { pins, errors };
   }
-  function functions(pin) {
-    const result = new Set();
+  function pinFunctions(pin) {
+    const result = [];
     for (const p of peripherals) {
       for (const [signal, defaultPin] of p.signals) {
+        const mappings = [];
+        if (defaultPin === pin) mappings.push("Default");
+        for (const [name, map] of Object.entries(p.maps)) if (map[signal] === pin) mappings.push(name);
+        if (!mappings.length) continue;
         const label = p.group === "ADC" ? signal : `${p.id}_${signal}`;
-        if (defaultPin === pin) result.add(label);
-        for (const map of Object.values(p.maps)) if (map[signal] === pin) result.add(`${label} (remap)`);
+        result.push({ peripheral: p.id, group: p.group, signal, label, mappings, optional: p.optional[signal] || null });
       }
     }
-    return [...result];
+    return result;
+  }
+  function functions(pin) {
+    return pinFunctions(pin).flatMap(entry => [
+      ...(entry.mappings.includes("Default") ? [entry.label] : []),
+      ...(entry.mappings.some(mapping => mapping !== "Default") ? [`${entry.label} (remap)`] : []),
+    ]);
   }
 
   // RM0008 section 9.1.11, tables 22–29: peripheral GPIO configurations.
@@ -236,7 +245,7 @@
       rows, notes: [...notes], remaps, errors: assigned.errors,
     };
   }
-  const api = { peripherals, packagePins, capabilities, defaults, assignments, functions, configurationSummary };
+  const api = { peripherals, packagePins, capabilities, defaults, assignments, functions, pinFunctions, configurationSummary };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.BluePillPinout = api;
 })(globalThis);

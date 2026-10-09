@@ -5,7 +5,7 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const model = require("../docs/assets/pinout-model.js");
+const model = require("../docs/assets/js/pinout-model.js");
 
 test("USART2 clock conflicts with ADC channel 4 and releases PA4 when disabled", () => {
   const state = model.defaults();
@@ -83,6 +83,19 @@ test("default selections are independent and every mapped signal is bonded", () 
 
 const clocks = plan => plan.clocks.map(c => `${c.register}.${c.bit}`);
 const row = (plan, signal) => plan.rows.find(r => r.signal === signal);
+
+test("pin function details distinguish default, remapped, and optional signals", () => {
+  const pa4 = model.pinFunctions("PA4");
+  assert.deepEqual(pa4.map(f => f.peripheral), ["USART2", "ADC channel 4", "SPI1"]);
+  assert.deepEqual(pa4.find(f => f.signal === "CK").mappings, ["Default"]);
+  assert.match(pa4.find(f => f.signal === "CK").optional, /synchronous/);
+  assert.equal(pa4.find(f => f.signal === "ADC12_IN4").optional, null);
+  const pb3 = model.pinFunctions("PB3");
+  assert.deepEqual(pb3.find(f => f.label === "SPI1_SCK").mappings, ["Remapped"]);
+  assert.deepEqual(pb3.find(f => f.label === "TIM2_CH2").mappings, ["Partial remap 1", "Full remap"]);
+  assert.deepEqual(model.functions("PB3"), ["SPI1_SCK (remap)", "TIM2_CH2 (remap)", "Debug_JTDO", "Trace_SWO"]);
+  assert.deepEqual(model.pinFunctions("GND"), []);
+});
 
 test("USART summary enables the peripheral and remapped GPIO port with correct CRH fields", () => {
   const state = model.defaults();

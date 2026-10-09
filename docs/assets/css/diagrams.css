@@ -1,0 +1,17 @@
+/* Copyright (C) 2026 Phyxor Microsystems
+ * SPDX-FileContributor: Pablo Palazon
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+.md-typeset .mermaid > svg {
+  display: block;
+  margin-inline: auto;
+}
+
+.md-typeset img:not([src*=".svg" i]) {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  margin-inline: auto;
+}

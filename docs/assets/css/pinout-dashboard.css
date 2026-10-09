@@ -12,6 +12,20 @@
 .pinout-summary { border-left: 5px solid #16856b; }
 .pinout-summary.has-conflicts { border-left-color: #c82737; }
 .pinout-summary p { margin: .2rem 0; }
+.pinout-info > h3 { margin-top: 0; }
+.pinout-info-location, .pinout-info-legend { font-size: .7rem; }
+.pinout-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: .5rem; }
+.pinout-peripheral-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: .5rem; }
+.pinout-info-card { padding: .6rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .3rem; min-width: 0; overflow-wrap: anywhere; font-size: .7rem; }
+.pinout-info-card h4 { margin: 0 0 .3rem; font-size: .75rem; }
+.pinout-info-card p { margin: .3rem 0 0; }
+.pinout-info-card[data-status="positive"] { background: #e8f5e9; border-color: #32834b; color: #175b2b; }
+.pinout-info-card[data-status="negative"] { background: #fff0f2; border-color: #bd3343; color: #941e2d; }
+.pinout-info-card ul { margin: .5rem 0 0; padding-left: .8rem; }
+.pinout-info-card li { margin-bottom: .5rem; }
+.pinout-info-card small { display: block; }
+.pinout-electrical-card { grid-column: 1 / -1; }
+.pinout-info-card li[data-active="true"] > code { font-weight: bold; }
 .pinout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: .7rem; align-items: start; }
 .pinout-drawing { min-width: 0; overflow-x: auto; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; background: #fafcff; }
 .pinout-controls { min-width: 0; min-height: 0; height: clamp(420px, 75vh, 760px); overflow-y: auto; overscroll-behavior-y: contain; padding: 0 .5rem .5rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; }

@@ -1,0 +1,46 @@
+<!--
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
+{#
+Copyright (C) 2026 Phyxor Microsystems
+SPDX-FileContributor: Pablo Palazon
+SPDX-License-Identifier: BSD-3-Clause
+#}
+
+{% macro children(items) %}
+  <ul class="site-nav-menu-list">
+    {% for item in items %}
+      <li>
+        {% if item.children %}
+          <span class="site-nav-menu-heading">{{ item.title | e }}</span>
+          {{ children(item.children) }}
+        {% else %}
+          <a href="{{ item.url | url }}" class="site-nav-menu-link{% if item.active %} site-nav-menu-link--active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>{{ item.title | e }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+<nav class="md-tabs site-nav" aria-label="{{ lang.t('tabs') }}" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      {% for item in nav.items %}
+        <li class="md-tabs__item{% if item.active %} md-tabs__item--active{% endif %}">
+          {% if item.children %}
+            <details class="site-nav-dropdown">
+              <summary class="md-tabs__link">{{ item.title | e }} <span class="site-nav-chevron" aria-hidden="true">▾</span></summary>
+              <div class="site-nav-dropdown-menu">{{ children(item.children) }}</div>
+            </details>
+          {% else %}
+            <a href="{{ item.url | url }}" class="md-tabs__link"{% if item.active %} aria-current="page"{% endif %}>{{ item.title | e }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</nav>

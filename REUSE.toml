@@ -19,6 +19,7 @@ path = [
     "apps/.clangd",
     "docs/**/*.md",
     "docs/**/*.png",
+    "docs/**/*.svg",
     "drivers/cmsis/.clangd",
     "include/.clangd",
     "mise.toml",

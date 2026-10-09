@@ -7,7 +7,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
-const model = require("../docs/assets/clock-model.js");
+const model = require("../docs/assets/js/clock-model.js");
 
 test("TIM2 at 200 ms uses the doubled APB1 timer clock", () => {
   const clocks = model.calculate(model.presets.hse72).clocks;

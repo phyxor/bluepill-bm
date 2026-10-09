@@ -1,0 +1,25 @@
+/* Copyright (C) 2026 Phyxor Microsystems
+ * SPDX-FileContributor: Pablo Palazon
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+@media (min-width: 76.25em) {
+  .md-sidebar--primary { display: none; }
+  .site-nav, .site-nav > .md-grid, .site-nav .md-tabs__list { overflow: visible; }
+  .site-nav .md-tabs__list { display: flex; flex-wrap: wrap; contain: none; }
+  .site-nav-dropdown { display: flow-root; position: relative; height: 100%; }
+  .site-nav-dropdown > summary { display: flex; align-items: center; gap: .3rem; cursor: pointer; list-style: none; }
+  .site-nav-dropdown > summary::-webkit-details-marker { display: none; }
+  .site-nav-chevron { transition: transform .15s; }
+  .site-nav-dropdown[open] .site-nav-chevron { transform: rotate(180deg); }
+  .site-nav-dropdown[open] > summary { opacity: 1; }
+  .site-nav-dropdown-menu { position: absolute; top: 100%; left: 0; z-index: 5; min-width: 12rem; width: max-content; max-width: min(22rem, 90vw); max-height: min(65vh, 28rem); overflow-y: auto; overscroll-behavior-y: contain; padding: .3rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .2rem; background: var(--md-default-bg-color); color: var(--md-default-fg-color); box-shadow: 0 .25rem .75rem #0003; }
+  .site-nav .md-tabs__item:last-child .site-nav-dropdown-menu { left: auto; right: 0; }
+  .site-nav-menu-list { margin: 0; padding: 0; list-style: none; }
+  .site-nav-menu-list .site-nav-menu-list { padding-left: .5rem; }
+  .site-nav-menu-link { display: block; padding: .45rem .6rem; border-radius: .15rem; font-size: .7rem; white-space: normal; }
+  .site-nav-menu-link:hover, .site-nav-menu-link:focus-visible { background: var(--md-default-fg-color--lightest); color: var(--md-accent-fg-color); }
+  .site-nav-menu-link--active { color: var(--md-accent-fg-color); font-weight: bold; }
+  .site-nav-menu-heading { display: block; padding: .45rem .6rem .2rem; font-size: .7rem; font-weight: bold; }
+  .site-nav-dropdown > summary:focus-visible, .site-nav-menu-link:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 2px; }
+}
