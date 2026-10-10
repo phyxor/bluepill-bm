@@ -12,18 +12,15 @@ path = [
     ".gitmodules",
     ".nvim.lua",
     ".pre-commit-config.yaml",
-    "AGENTS.md",
     "Makefile",
-    "README.md",
-    "docs/**/*.md",
-    "docs/**/*.png",
-    "docs/**/*.svg",
     "mise.toml",
     "mkdocs.yml",
     "openocd/bluepill.cfg",
     "requirements.txt",
-    "vendor/README.md",
-    "**/.clangd"
+    "docs/**/*.svg",
+    "docs/**/*.png",
+    "**/.clangd",
+    "**/*.md"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Pablo Palazon"
