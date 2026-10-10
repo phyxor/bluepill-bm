@@ -1,10 +1,3 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # AGENTS.md
 
 Guidance for AI agents working in this STM32 Blue Pill bare-metal project.
@@ -60,8 +53,8 @@ Important paths:
 - `system/newlib_stubs.c`: minimal Newlib syscall stubs
 - `include/stm32f103c8t6.h`: local direct-register header for `bare-*` apps
 - `drivers/cmsis/`: project CMSIS-oriented driver code
-- `system/asm/startup_stm32f103c8tx.s`: reference assembly startup, not linked by
-  default
+- `system/asm/startup_stm32f103c8tx.s`: reference assembly startup, not linked
+  by default
 - `linker/STM32F103C8TX_FLASH.ld`: active linker script
 - `openocd/bluepill.cfg`: OpenOCD config for this board/probe
 - `vendor/STM32CubeF1/`: pinned STM32CubeF1 Git submodule
@@ -146,11 +139,11 @@ Known header handling in `drivers/cmsis/.clangd`:
 ```yaml
 ---
 If:
-  PathMatch: .*\.h
+    PathMatch: .*\.h
 CompileFlags:
-  Add:
-    - -x
-    - c-header
+    Add:
+        - -x
+        - c-header
 ```
 
 This avoids clangd guessing Objective-C++ for standalone or empty `.h` files.
@@ -185,9 +178,9 @@ RAM:   0x20000000, 20K
 
 ## Clock Assumptions
 
-`system/system_stm32f103.c` currently keeps the chip on its simple default clock
-setup. It does not yet configure HSE, PLL, 72 MHz system clock, flash wait
-states, or bus prescalers.
+`system/system_stm32f103.c` currently keeps the chip on its simple default
+clock setup. It does not yet configure HSE, PLL, 72 MHz system clock, flash
+wait states, or bus prescalers.
 
 When adding timing-sensitive code, state the assumed clock clearly. SysTick
 code and examples should not silently assume 72 MHz until clock setup exists.
@@ -229,44 +222,35 @@ make APP=cmsis-blink
 For changes that affect shared runtime, startup, linker, or Makefile behavior,
 build both bare and CMSIS examples if available.
 
-## Current Useful Next Steps
-
-Likely future project additions:
-
-1. Add a SysTick interrupt example.
-2. Add USART1 output and implement `board_putchar()` for `printf`.
-3. Configure the STM32F103 clock tree for 72 MHz.
-4. Add more direct-register peripheral examples before introducing higher
-   layers.
-
 <!-- graft:start -->
+
 ## Graft — repo context graph
 
 This repo is indexed in `graft/`: small linked markdown nodes that explain each
 system and carry exact file:line spans, kept in sync with the code through git.
 
-For ANY task here — understanding how something works, finding where code lives,
-or scoping a change — get context from the graph before grepping or opening
-source files. Re-ask freely (it's cheap) and reuse literal identifiers you
-already have (symbol, error string, file name) as the query. New to this repo?
-Run `graft map` first — a token-budgeted orientation (dir clusters, hubs,
+For ANY task here — understanding how something works, finding where code
+lives, or scoping a change — get context from the graph before grepping or
+opening source files. Re-ask freely (it's cheap) and reuse literal identifiers
+you already have (symbol, error string, file name) as the query. New to this
+repo? Run `graft map` first — a token-budgeted orientation (dir clusters, hubs,
 hotspots), no LLM, no key.
 
 - Run `graft ask "<your question>" --source` → ranked nodes with the relevant
   code spans inlined (each hit's ≤8-line crux by default; `--full` for whole
   definitions when the crux isn't enough). Match the tool to the task shape:
-  for understanding or editing, the top node IS the answer — cite its
-  `covers:` file:line spans and edit straight from `--source`. For
-  exhaustive tasks ("every occurrence / every caller of this pattern"), ranked
-  results are top-N, not complete — run `graft grep "<literal>"` instead
-  (exhaustive over indexed files, grouped by enclosing symbol), falling back
-  to raw `grep -rn` only for unindexed files.
+  for understanding or editing, the top node IS the answer — cite its `covers:`
+  file:line spans and edit straight from `--source`. For exhaustive tasks
+  ("every occurrence / every caller of this pattern"), ranked results are
+  top-N, not complete — run `graft grep "<literal>"` instead (exhaustive over
+  indexed files, grouped by enclosing symbol), falling back to raw `grep -rn`
+  only for unindexed files.
 - `graft skeleton <file>` → every definition's signature + span, ~10× cheaper
   than reading the file; use it to skim an API surface.
-- `graft callers <symbol>` gives precomputed, exact edges — who calls this.
-  Add `--direction out` for what it calls, or `--depth N` to walk
-  transitively for the full blast radius. For structural questions, skip
-  ranking and use this directly.
+- `graft callers <symbol>` gives precomputed, exact edges — who calls this. Add
+  `--direction out` for what it calls, or `--depth N` to walk transitively for
+  the full blast radius. For structural questions, skip ranking and use this
+  directly.
 - Or browse: `graft/INDEX.md` lists every node; follow the links.
 - Monorepos and folders of multiple repos rank fairly across sub-projects —
   hits carry `[scope/]` labels naming which one they're from. Narrow with
@@ -277,6 +261,7 @@ range before finalizing. Only open source files when a node genuinely lacks a
 needed detail, and then at the exact file:line the node points to — never
 re-read whole files.
 
-After big code changes, refresh the graph with `graft build` (deterministic,
-no API key, $0).
+After big code changes, refresh the graph with `graft build` (deterministic, no
+API key, $0).
+
 <!-- graft:end -->
