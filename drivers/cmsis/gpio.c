@@ -80,6 +80,32 @@ bool gpio_toggle(gpio_pin_t pin) {
     return true;
 }
 
+bool gpio_lock(gpio_pin_t pin) {
+    GPIO_TypeDef *port = gpio_port(pin);
+    if (!port) {
+        return false;
+    }
+
+    uint32_t mask = 1U << ((unsigned int)pin % 16U);
+    uint32_t current = port->LCKR;
+
+    /* LCKK=1 freezes LCKR until reset; only already-locked pins stay locked. */
+    if (current & GPIO_LCKR_LCKK) {
+        return (current & mask) != 0U;
+    }
+
+    /* Keep earlier LCK bits: the sequence writes the whole port's lock mask. */
+    uint32_t lock = (current & 0xFFFFU) | mask;
+
+    /* RM0008 lock key sequence: write 1, write 0, write 1, then read twice. */
+    port->LCKR = GPIO_LCKR_LCKK | lock;
+    port->LCKR = lock;
+    port->LCKR = GPIO_LCKR_LCKK | lock;
+    (void)port->LCKR;
+
+    return (port->LCKR & GPIO_LCKR_LCKK) != 0U;
+}
+
 bool gpio_read(gpio_pin_t pin) {
     GPIO_TypeDef *port = gpio_port(pin);
     if (!port) {

@@ -132,6 +132,13 @@ bool gpio_set(gpio_pin_t pin);
 bool gpio_reset(gpio_pin_t pin);
 bool gpio_toggle(gpio_pin_t pin);
 
+/* Lock the pin's MODE/CNF bits in CRL/CRH until the next reset. ODR/BSRR
+ * output writes still work. The port has a single lock sequence: once any pin
+ * is locked, LCKR is frozen and no further pins on that port can be locked.
+ * Return true if the pin is locked, false for an invalid pin or lock failure.
+ */
+bool gpio_lock(gpio_pin_t pin);
+
 /* Read the input level from IDR: true for high, false for low or invalid pin. */
 bool gpio_read(gpio_pin_t pin);
 
