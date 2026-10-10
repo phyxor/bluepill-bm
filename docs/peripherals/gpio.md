@@ -1,95 +1,70 @@
 # GPIO peripheral
 
-GPIO means General-Purpose Input/Output. A GPIO pin is a digital connection
-between the STM32 and an external circuit. Each pin belongs to a port, such as
-`GPIOA`, `GPIOB`, or `GPIOC`, and each port has up to 16 pins: `PA0..PA15`,
-`PB0..PB15`, `PC0..PC15`, and so on.
+## Main registers
 
-The Blue Pill onboard LED is normally connected to `PC13`. It is usually
-active-low, so driving `PC13` low turns the LED on and driving it high turns the
-LED off.
+- 32-bit configuration registers (`GPIOx_CRL`, `GPIOx_CRH`)
+- 32-bit data registers (`GPIOx_IDR`, `GPIOx_ODR`)
+- 32-bit atomic set/restet registers (`GPIOx_BSRR`) - no IRQ interruption
+- 16-bit atomic reset register (`GPIOxBRR`) - no IRQ interruption
+- 32-bit locking configuration register (`GPIOx_LCKR`)
 
-## Basic idea
+## GPIO modes
 
-A GPIO pin can be configured as one of these common modes:
+### Input / Output
 
-| Mode | Meaning |
-| --- | --- |
-| Input floating | The MCU reads the external voltage. Nothing inside pulls it high or low. |
-| Input pull-up / pull-down | The MCU weakly pulls the pin to `VDD` or `GND` when nothing else drives it. |
-| Analog | The digital input and output logic is disconnected. Use this mode for ADC or unused pins. |
-| Output push-pull | The MCU actively drives the pin high or low. |
-| Output open-drain | The MCU can drive low, but needs a pull-up resistor for high. |
-| Alternate function | A peripheral such as USART, SPI, I2C, or TIM owns the pin. |
+| Configuration        | `CNF` | `MODE`  | Purpose                                                    | Meaning of `0`         | Meaning of `1`              |
+| -------------------- | ----- | ------- | ---------------------------------------------------------- | ---------------------- | --------------------------- |
+| GP push-pull output  | `00`  | Nonzero | Drive an LED or digital signal                             | `ODR`: drive low       | `ODR`: drive high           |
+| GP open-drain output | `01`  | Nonzero | Drive low or release a shared line                         | `ODR`: drive low       | `ODR`: release the pin      |
+| AF push-pull output  | `10`  | Nonzero | Let a peripheral drive the pin, such as USART TX           | Peripheral: drive low  | Peripheral: drive high      |
+| AF open-drain output | `11`  | Nonzero | Let a peripheral drive a shared line, such as I2C          | Peripheral: drive low  | Peripheral: release the pin |
+| Analog input         | `00`  | `00`    | Measure voltage with the ADC (analog-to-digital converter) | `IDR` always reads `0` | Not reported by `IDR`       |
+| Floating input       | `01`  | `00`    | Read a digital signal without a pull resistor              | `IDR`: low             | `IDR`: high                 |
+| Input with pull-down | `10`  | `00`    | Default to low. Set `ODR = 0`                              | `IDR`: low             | `IDR`: high                 |
+| Input with pull-up   | `10`  | `00`    | Default to high. Set `ODR = 1`                             | `IDR`: low             | `IDR`: high                 |
 
-On STM32F1, each pin has a 4-bit configuration field:
+### Output modes
 
-```text
-CNF[1:0]   configuration type
-MODE[1:0]  input/output mode or output speed
-```
+| `MODE` | Maximum output speed | Purpose                          |
+| ------ | -------------------- | -------------------------------- |
+| `10`   | 2 MHz                | Slow signals, such as LEDs       |
+| `01`   | 10 MHz               | Signals that need faster changes |
+| `11`   | 50 MHz               | Fast signals, such as SPI clocks |
 
-Pins `0..7` are configured in `GPIOx_CRL`. Pins `8..15` are configured in
-`GPIOx_CRH`.
+## External interrupt / wakeup lines
 
-## Registers you use most
+Configure the pin in input mode
 
-GPIO is controlled by memory-mapped registers. Writing specific bits changes how
-the hardware behaves.
+> [!TODO] Create a link to the EXTI
 
-| Register | Purpose |
-| --- | --- |
-| `RCC_APB2ENR` | Enables the clock for GPIO ports and AFIO. A GPIO port must be clocked before use. |
-| `GPIOx_CRL` | Configures pins `0..7` of one GPIO port. |
-| `GPIOx_CRH` | Configures pins `8..15` of one GPIO port. |
-| `GPIOx_IDR` | Reads the current input level on the pins. |
-| `GPIOx_ODR` | Stores the output value for the pins. |
-| `GPIOx_BSRR` | Atomically sets or resets output bits. This is safer than read-modify-write on `ODR`. |
-| `AFIO_MAPR` | Remaps some peripheral functions to alternate pins. |
+> [!TODO] Create a link to Wakup Event
 
-For example, configuring and driving the Blue Pill LED uses three ideas:
+## Alternate Functions
 
-```c
-RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;  /* Enable GPIOC clock. */
+Alternate functions connect pins to peripherals, such as USART, SPI, I2C, and
+timers. Each signal uses specific pins. Some signals can move to other pins
+through remapping. See the [STM32F103C8 pinout](../board/pinout.md) for pin
+assignments and GPIO configuration.
 
-GPIOC->CRH &= ~(GPIO_CRH_MODE13 | GPIO_CRH_CNF13);
-GPIOC->CRH |= GPIO_CRH_MODE13_1;     /* PC13 output, 2 MHz push-pull. */
+## Physical Connections
 
-GPIOC->BSRR = GPIO_BSRR_BR13;        /* LED on: PC13 low. */
-GPIOC->BSRR = GPIO_BSRR_BS13;        /* LED off: PC13 high. */
-```
-
-## External connections
-
-GPIO pins are not just software bits. They are electrical connections, so the
-external circuit matters.
-
-| Connection | Typical GPIO mode | Notes |
-| --- | --- | --- |
-| LED | Push-pull output | Use a current-limiting resistor unless the board already has one. |
-| Button to GND | Input pull-up | Pin reads high when released, low when pressed. |
-| Button to `VDD` | Input pull-down | Pin reads low when released, high when pressed. |
-| I2C `SCL` / `SDA` | Alternate-function open-drain | Needs pull-up resistors. External pull-ups are preferred. |
-| USART TX / SPI SCK / SPI MOSI | Alternate-function push-pull | The peripheral drives the output signal. |
-| ADC input | Analog | Keep the voltage within the allowed input range. |
-
-Avoid connecting two push-pull outputs together. If one output drives high while
-the other drives low, they fight electrically and can damage the devices.
-
-Also check the STM32 datasheet for pin limits, 5 V tolerance, maximum current,
-and which alternate functions are available on each physical package pin.
-
-## Reference manual pages
-
-Use the project-local STM32F103 reference manual for the full register details:
-
-| Topic | Direct link |
-| --- | --- |
-| GPIO and AFIO chapter start | [RM0008 page 159](../refs/stm32f103x8-reference.pdf#page=159) |
-| GPIO port structure and modes | [RM0008 page 160](../refs/stm32f103x8-reference.pdf#page=160) |
-| GPIO mode table | [RM0008 page 161](../refs/stm32f103x8-reference.pdf#page=161) |
-| Input, output, alternate, and analog behavior | [RM0008 page 163](../refs/stm32f103x8-reference.pdf#page=163) |
-| GPIO registers: `CRL`, `CRH`, `IDR`, `ODR`, `BSRR` | [RM0008 page 171](../refs/stm32f103x8-reference.pdf#page=171) |
-| `RCC_APB2ENR`: GPIO and AFIO clock enables | [RM0008 page 112](../refs/stm32f103x8-reference.pdf#page=112) |
-| AFIO remapping overview | [RM0008 page 175](../refs/stm32f103x8-reference.pdf#page=175) |
-| `AFIO_MAPR` register | [RM0008 page 184](../refs/stm32f103x8-reference.pdf#page=184) |
+- Connect the grounds of the board and external circuit.
+- Use 3.3 V signals. Apply 5 V only to pins and modes that the datasheet
+  permits.
+- Keep current within the datasheet limits for each pin and for the whole
+  device. Do not use absolute maximum ratings as operating targets.
+- Add a series resistor to each external LED. Calculate
+  `R = (3.3 V - LED voltage) / LED current`.
+- Use a transistor or driver for motors, relays, and other high-current loads.
+  Add a protection diode across a DC relay coil to limit voltage spikes.
+- Use a pull-up resistor to 3.3 V for a default high input, or a pull-down to
+  ground for a default low input. A 10 kΩ resistor is a common starting value.
+- Internal pull resistors are weak. Use external resistors when the level must
+  stay defined during reset or when wires pick up noise.
+- Open-drain outputs need pull-ups. For I2C, choose external pull-ups that meet
+  the bus timing and current limits. Pull-ups do not belong in series with the
+  signal.
+- Do not connect two push-pull outputs together or short an output to a supply
+  rail.
+- PC13 has stricter current and speed limits. Use it for the onboard LED, not
+  for high-current loads or fast signals.

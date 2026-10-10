@@ -210,6 +210,13 @@ Keep changes minimal and explicit.
 - Do not edit vendored STM32CubeF1 files unless explicitly requested
 - Prefer small comments that explain hardware intent, not obvious C syntax
 
+## Writing style
+
+- Use the `simple-english` skill for documentation and replies.
+- Keep text brief. Use short sentences and explain only what the reader needs.
+- Prefer compact tables for configuration options.
+- Give the result first. Keep completion messages to one or two sentences.
+
 ## Verification Expectations
 
 For firmware changes, run the smallest relevant build:
