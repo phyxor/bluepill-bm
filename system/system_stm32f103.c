@@ -6,10 +6,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "clock_stm32f103.h"
-#include "stm32f1xx.h"
-#include "system_stm32f1xx.h"
-
 #ifndef HSE_VALUE
 #define HSE_VALUE 8000000U
 #endif
@@ -17,6 +13,9 @@
 #ifndef HSI_VALUE
 #define HSI_VALUE 8000000U
 #endif
+
+#include "stm32f1xx.h"
+#include "system_stm32f1xx.h"
 
 /* This variable is updated in three ways:
       1) by calling CMSIS function SystemCoreClockUpdate()

@@ -8,7 +8,6 @@ version = 1
 [[annotations]]
 path = [
     ".clang-format",
-    ".clangd",
     ".gitignore",
     ".gitmodules",
     ".nvim.lua",
@@ -16,18 +15,15 @@ path = [
     "AGENTS.md",
     "Makefile",
     "README.md",
-    "apps/.clangd",
     "docs/**/*.md",
     "docs/**/*.png",
     "docs/**/*.svg",
-    "drivers/cmsis/.clangd",
-    "include/.clangd",
     "mise.toml",
     "mkdocs.yml",
     "openocd/bluepill.cfg",
     "requirements.txt",
-    "system/.clangd",
     "vendor/README.md",
+    "**/.clangd"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Pablo Palazon"

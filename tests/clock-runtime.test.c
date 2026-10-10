@@ -53,8 +53,8 @@ void test_modify_register(volatile uint32_t *reg, uint32_t clear, uint32_t set) 
         /* Every intermediate state must keep APB1 and ADC within limits. */
         uint32_t saved_core = SystemCoreClock;
         SystemCoreClockUpdate();
-        assert(clock_stm32f103_get_pclk1_hz() <= 36000000u);
-        assert(clock_stm32f103_get_adc_hz() <= 14000000u);
+        assert(clock_get_pclk1_hz() <= 36000000u);
+        assert(clock_get_adc_hz() <= 14000000u);
         SystemCoreClock = saved_core;
     }
 }
@@ -78,18 +78,18 @@ static void test_clock_queries(void) {
     static const uint8_t apb_dividers[] = {1, 1, 1, 1, 2, 4, 8, 16};
     static const uint8_t adc_dividers[] = {2, 4, 6, 8};
     clear_registers();
-    assert(clock_stm32f103_get_pclk1_hz() == 8000000u);
-    assert(clock_stm32f103_get_pclk2_hz() == 8000000u);
-    assert(clock_stm32f103_get_apb1_timer_hz() == 8000000u);
-    assert(clock_stm32f103_get_apb2_timer_hz() == 8000000u);
-    assert(clock_stm32f103_get_adc_hz() == 4000000u);
+    assert(clock_get_pclk1_hz() == 8000000u);
+    assert(clock_get_pclk2_hz() == 8000000u);
+    assert(clock_get_apb1_timer_hz() == 8000000u);
+    assert(clock_get_apb2_timer_hz() == 8000000u);
+    assert(clock_get_adc_hz() == 4000000u);
     for (unsigned timer = CLOCK_TIM1; timer <= CLOCK_TIM4; ++timer) {
-        assert(clock_stm32f103_get_tim_hz((clock_timer_t)timer) == 8000000u);
+        assert(clock_get_tim_hz((clock_timer_t)timer) == 8000000u);
     }
-    assert(clock_stm32f103_get_tim_hz((clock_timer_t)0) == 0u);
-    assert(clock_stm32f103_get_tim_hz((clock_timer_t)-1) == 0u);
-    assert(clock_stm32f103_get_tim_hz((clock_timer_t)5) == 0u);
-    assert(clock_stm32f103_get_tim_hz((clock_timer_t)257) == 0u);
+    assert(clock_get_tim_hz((clock_timer_t)0) == 0u);
+    assert(clock_get_tim_hz((clock_timer_t)-1) == 0u);
+    assert(clock_get_tim_hz((clock_timer_t)5) == 0u);
+    assert(clock_get_tim_hz((clock_timer_t)257) == 0u);
 
     /* HCLK is already AHB-divided: the queries must not divide it again. */
     uint32_t pll = RCC_CFGR_SWS_PLL | RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9 | RCC_CFGR_HPRE_DIV2;
@@ -103,19 +103,17 @@ static void test_clock_queries(void) {
                 assert(SystemCoreClock == 36000000u);
                 uint32_t pclk1 = 36000000u / apb_dividers[apb1];
                 uint32_t pclk2 = 36000000u / apb_dividers[apb2];
-                assert(clock_stm32f103_get_pclk1_hz() == pclk1);
-                assert(clock_stm32f103_get_pclk2_hz() == pclk2);
-                assert(clock_stm32f103_get_apb1_timer_hz() ==
-                       (apb_dividers[apb1] == 1 ? pclk1 : 2u * pclk1));
-                assert(clock_stm32f103_get_apb2_timer_hz() ==
-                       (apb_dividers[apb2] == 1 ? pclk2 : 2u * pclk2));
-                assert(clock_stm32f103_get_tim_hz(CLOCK_TIM1) ==
+                assert(clock_get_pclk1_hz() == pclk1);
+                assert(clock_get_pclk2_hz() == pclk2);
+                assert(clock_get_apb1_timer_hz() == (apb_dividers[apb1] == 1 ? pclk1 : 2u * pclk1));
+                assert(clock_get_apb2_timer_hz() == (apb_dividers[apb2] == 1 ? pclk2 : 2u * pclk2));
+                assert(clock_get_tim_hz(CLOCK_TIM1) ==
                        (apb_dividers[apb2] == 1 ? pclk2 : 2u * pclk2));
                 for (unsigned timer = CLOCK_TIM2; timer <= CLOCK_TIM4; ++timer) {
-                    assert(clock_stm32f103_get_tim_hz((clock_timer_t)timer) ==
+                    assert(clock_get_tim_hz((clock_timer_t)timer) ==
                            (apb_dividers[apb1] == 1 ? pclk1 : 2u * pclk1));
                 }
-                assert(clock_stm32f103_get_adc_hz() == pclk2 / adc_dividers[adc]);
+                assert(clock_get_adc_hz() == pclk2 / adc_dividers[adc]);
                 assert(test_rcc.CFGR == cfgr);
                 assert(test_rcc.APB1ENR == 0 && test_rcc.APB2ENR == 0);
                 assert(SystemCoreClock == 36000000u);
@@ -127,40 +125,40 @@ static void test_clock_queries(void) {
                     RCC_CFGR_ADCPRE_DIV4;
     SystemCoreClockUpdate();
     assert(SystemCoreClock == 48000000u);
-    assert(clock_stm32f103_get_pclk1_hz() == 24000000u);
-    assert(clock_stm32f103_get_pclk2_hz() == 48000000u);
-    assert(clock_stm32f103_get_apb1_timer_hz() == 48000000u);
-    assert(clock_stm32f103_get_apb2_timer_hz() == 48000000u);
-    assert(clock_stm32f103_get_adc_hz() == 12000000u);
+    assert(clock_get_pclk1_hz() == 24000000u);
+    assert(clock_get_pclk2_hz() == 48000000u);
+    assert(clock_get_apb1_timer_hz() == 48000000u);
+    assert(clock_get_apb2_timer_hz() == 48000000u);
+    assert(clock_get_adc_hz() == 12000000u);
 
     test_rcc.CFGR = RCC_CFGR_SWS_PLL | RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9 | RCC_CFGR_PPRE1_DIV2 |
                     RCC_CFGR_ADCPRE_DIV6;
     SystemCoreClockUpdate();
     assert(SystemCoreClock == 72000000u);
-    assert(clock_stm32f103_get_pclk1_hz() == 36000000u);
-    assert(clock_stm32f103_get_pclk2_hz() == 72000000u);
-    assert(clock_stm32f103_get_apb1_timer_hz() == 72000000u);
-    assert(clock_stm32f103_get_apb2_timer_hz() == 72000000u);
-    assert(clock_stm32f103_get_adc_hz() == 12000000u);
+    assert(clock_get_pclk1_hz() == 36000000u);
+    assert(clock_get_pclk2_hz() == 72000000u);
+    assert(clock_get_apb1_timer_hz() == 72000000u);
+    assert(clock_get_apb2_timer_hz() == 72000000u);
+    assert(clock_get_adc_hz() == 12000000u);
 }
 
 static void test_oscillator_operations(void) {
     static const struct {
-        clock_stm32f103_status_t (*enable)(void);
-        clock_stm32f103_status_t (*disable)(void);
+        clock_status_t (*enable)(void);
+        clock_status_t (*disable)(void);
         volatile uint32_t *reg;
         uint32_t on;
         uint32_t ready;
         uint32_t preserved;
     } oscillators[] = {
-        {clock_stm32f103_enable_hsi, clock_stm32f103_disable_hsi, &test_rcc.CR, RCC_CR_HSION,
-         RCC_CR_HSIRDY, 16u << RCC_CR_HSITRIM_Pos},
-        {clock_stm32f103_enable_hse, clock_stm32f103_disable_hse, &test_rcc.CR, RCC_CR_HSEON,
-         RCC_CR_HSERDY, RCC_CR_HSEBYP},
-        {clock_stm32f103_enable_lsi, clock_stm32f103_disable_lsi, &test_rcc.CSR, RCC_CSR_LSION,
-         RCC_CSR_LSIRDY, RCC_CSR_PINRSTF},
-        {clock_stm32f103_enable_lse, clock_stm32f103_disable_lse, &test_rcc.BDCR, RCC_BDCR_LSEON,
-         RCC_BDCR_LSERDY, RCC_BDCR_LSEBYP | RCC_BDCR_RTCSEL_LSI},
+        {clock_enable_hsi, clock_disable_hsi, &test_rcc.CR, RCC_CR_HSION, RCC_CR_HSIRDY,
+         16u << RCC_CR_HSITRIM_Pos},
+        {clock_enable_hse, clock_disable_hse, &test_rcc.CR, RCC_CR_HSEON, RCC_CR_HSERDY,
+         RCC_CR_HSEBYP},
+        {clock_enable_lsi, clock_disable_lsi, &test_rcc.CSR, RCC_CSR_LSION, RCC_CSR_LSIRDY,
+         RCC_CSR_PINRSTF},
+        {clock_enable_lse, clock_disable_lse, &test_rcc.BDCR, RCC_BDCR_LSEON, RCC_BDCR_LSERDY,
+         RCC_BDCR_LSEBYP | RCC_BDCR_RTCSEL_LSI},
     };
     for (unsigned i = 0; i < sizeof(oscillators) / sizeof(oscillators[0]); ++i) {
         clear_registers();
@@ -174,18 +172,18 @@ static void test_oscillator_operations(void) {
         *oscillators[i].reg = oscillators[i].preserved;
 
         /* RAM never raises RDY: enabling must time out and retain the request. */
-        assert(oscillators[i].enable() == CLOCK_STM32F103_TIMEOUT);
+        assert(oscillators[i].enable() == CLOCK_TIMEOUT);
         assert(*oscillators[i].reg == (oscillators[i].preserved | oscillators[i].on));
         *oscillators[i].reg |= oscillators[i].ready;
-        assert(oscillators[i].enable() == CLOCK_STM32F103_OK);
-        assert(oscillators[i].enable() == CLOCK_STM32F103_OK);
+        assert(oscillators[i].enable() == CLOCK_OK);
+        assert(oscillators[i].enable() == CLOCK_OK);
 
         /* RAM never clears RDY, also modeling LSI held on by an active IWDG. */
-        assert(oscillators[i].disable() == CLOCK_STM32F103_TIMEOUT);
+        assert(oscillators[i].disable() == CLOCK_TIMEOUT);
         assert(*oscillators[i].reg == (oscillators[i].preserved | oscillators[i].ready));
         *oscillators[i].reg &= ~oscillators[i].ready;
-        assert(oscillators[i].disable() == CLOCK_STM32F103_OK);
-        assert(oscillators[i].disable() == CLOCK_STM32F103_OK);
+        assert(oscillators[i].disable() == CLOCK_OK);
+        assert(oscillators[i].disable() == CLOCK_OK);
         assert(*oscillators[i].reg == oscillators[i].preserved);
         assert(test_rcc.CFGR == cfgr);
         assert(SystemCoreClock == HSI_VALUE);
@@ -203,31 +201,28 @@ static void test_oscillator_operations(void) {
 
 static void test_oscillator_dependencies(void) {
     static const struct {
-        clock_stm32f103_status_t (*disable)(void);
+        clock_status_t (*disable)(void);
         uint32_t cr;
         uint32_t cfgr;
         uint32_t bdcr;
     } cases[] = {
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION, 0, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION, RCC_CFGR_SW_HSE, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION, RCC_CFGR_SWS_HSE, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION | RCC_CR_PLLON,
-         RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION | RCC_CR_PLLRDY,
-         RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION, RCC_CFGR_SW_PLL | RCC_CFGR_SWS_HSE, 0},
-        {clock_stm32f103_disable_hsi, RCC_CR_HSION,
-         RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE | RCC_CFGR_MCO_HSI, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON, RCC_CFGR_SW_HSE, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON, RCC_CFGR_SWS_HSE, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON | RCC_CR_PLLON, RCC_CFGR_PLLSRC, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON | RCC_CR_PLLRDY, RCC_CFGR_PLLSRC, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON, RCC_CFGR_PLLSRC | RCC_CFGR_SW_PLL, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON | RCC_CR_CSSON, 0, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON, RCC_CFGR_MCO_HSE, 0},
-        {clock_stm32f103_disable_hse, RCC_CR_HSEON, 0, RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_HSE},
-        {clock_stm32f103_disable_lsi, 0, 0, RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSI},
-        {clock_stm32f103_disable_lse, 0, 0, RCC_BDCR_LSEON | RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSE},
+        {clock_disable_hsi, RCC_CR_HSION, 0, 0},
+        {clock_disable_hsi, RCC_CR_HSION, RCC_CFGR_SW_HSE, 0},
+        {clock_disable_hsi, RCC_CR_HSION, RCC_CFGR_SWS_HSE, 0},
+        {clock_disable_hsi, RCC_CR_HSION | RCC_CR_PLLON, RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE, 0},
+        {clock_disable_hsi, RCC_CR_HSION | RCC_CR_PLLRDY, RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE, 0},
+        {clock_disable_hsi, RCC_CR_HSION, RCC_CFGR_SW_PLL | RCC_CFGR_SWS_HSE, 0},
+        {clock_disable_hsi, RCC_CR_HSION, RCC_CFGR_SW_HSE | RCC_CFGR_SWS_HSE | RCC_CFGR_MCO_HSI, 0},
+        {clock_disable_hse, RCC_CR_HSEON, RCC_CFGR_SW_HSE, 0},
+        {clock_disable_hse, RCC_CR_HSEON, RCC_CFGR_SWS_HSE, 0},
+        {clock_disable_hse, RCC_CR_HSEON | RCC_CR_PLLON, RCC_CFGR_PLLSRC, 0},
+        {clock_disable_hse, RCC_CR_HSEON | RCC_CR_PLLRDY, RCC_CFGR_PLLSRC, 0},
+        {clock_disable_hse, RCC_CR_HSEON, RCC_CFGR_PLLSRC | RCC_CFGR_SW_PLL, 0},
+        {clock_disable_hse, RCC_CR_HSEON | RCC_CR_CSSON, 0, 0},
+        {clock_disable_hse, RCC_CR_HSEON, RCC_CFGR_MCO_HSE, 0},
+        {clock_disable_hse, RCC_CR_HSEON, 0, RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_HSE},
+        {clock_disable_lsi, 0, 0, RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSI},
+        {clock_disable_lse, 0, 0, RCC_BDCR_LSEON | RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSE},
     };
     for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
         clear_registers();
@@ -235,7 +230,7 @@ static void test_oscillator_dependencies(void) {
         test_rcc.CFGR = cases[i].cfgr;
         test_rcc.BDCR = cases[i].bdcr;
         test_rcc.CSR = RCC_CSR_LSION;
-        assert(cases[i].disable() == CLOCK_STM32F103_IN_USE);
+        assert(cases[i].disable() == CLOCK_IN_USE);
         assert(test_rcc.CR == cases[i].cr);
         assert(test_rcc.CFGR == cases[i].cfgr);
         assert(test_rcc.BDCR == cases[i].bdcr);
@@ -247,12 +242,12 @@ static void test_oscillator_dependencies(void) {
     clear_registers();
     test_rcc.CR = RCC_CR_HSION | RCC_CR_PLLON;
     test_rcc.CFGR = RCC_CFGR_PLLSRC | RCC_CFGR_SW_PLL | RCC_CFGR_SWS_PLL;
-    assert(clock_stm32f103_disable_hsi() == CLOCK_STM32F103_OK);
+    assert(clock_disable_hsi() == CLOCK_OK);
     assert(test_rcc.CR == RCC_CR_PLLON);
 
     test_rcc.CR = RCC_CR_HSEON | RCC_CR_PLLON;
     test_rcc.CFGR = RCC_CFGR_SW_PLL | RCC_CFGR_SWS_PLL;
-    assert(clock_stm32f103_disable_hse() == CLOCK_STM32F103_OK);
+    assert(clock_disable_hse() == CLOCK_OK);
     assert(test_rcc.CR == RCC_CR_PLLON);
 }
 
@@ -281,8 +276,8 @@ static void test_pll_operations(void) {
         test_rcc.CFGR = preserved | mask;
         test_flash.ACR = 2u;
         /* RAM cannot raise PLLRDY, but programming must reach the lock wait. */
-        assert(clock_stm32f103_enable_pll(configs[i].source, configs[i].divider,
-                                          configs[i].multiplier) == CLOCK_STM32F103_TIMEOUT);
+        assert(clock_enable_pll(configs[i].source, configs[i].divider, configs[i].multiplier) ==
+               CLOCK_TIMEOUT);
         assert((test_rcc.CR & RCC_CR_PLLON) != 0u);
         assert((test_rcc.CR & RCC_CR_HSEBYP) != 0u);
         assert((test_rcc.CFGR & ~mask) == preserved);
@@ -297,8 +292,8 @@ static void test_pll_operations(void) {
         }
         uint32_t cfgr = test_rcc.CFGR;
         uint32_t cr = test_rcc.CR;
-        assert(clock_stm32f103_enable_pll(configs[i].source, configs[i].divider,
-                                          configs[i].multiplier) == CLOCK_STM32F103_IN_USE);
+        assert(clock_enable_pll(configs[i].source, configs[i].divider, configs[i].multiplier) ==
+               CLOCK_IN_USE);
         assert(test_rcc.CFGR == cfgr && test_rcc.CR == cr);
 
         /* Model PLL becoming the active source to verify the programmed frequency. */
@@ -309,11 +304,11 @@ static void test_pll_operations(void) {
         SystemCoreClockUpdate();
 
         test_rcc.CR |= RCC_CR_PLLRDY;
-        assert(clock_stm32f103_disable_pll() == CLOCK_STM32F103_TIMEOUT);
+        assert(clock_disable_pll() == CLOCK_TIMEOUT);
         assert((test_rcc.CR & RCC_CR_PLLON) == 0u);
         test_rcc.CR &= ~RCC_CR_PLLRDY;
-        assert(clock_stm32f103_disable_pll() == CLOCK_STM32F103_OK);
-        assert(clock_stm32f103_disable_pll() == CLOCK_STM32F103_OK);
+        assert(clock_disable_pll() == CLOCK_OK);
+        assert(clock_disable_pll() == CLOCK_OK);
         assert(test_rcc.CR == (cr & ~RCC_CR_PLLON));
         assert(test_rcc.CFGR == cfgr);
     }
@@ -325,16 +320,16 @@ static void test_pll_operations(void) {
             source == CLOCK_PLL_HSE ? RCC_CR_HSION | RCC_CR_HSIRDY : RCC_CR_HSEON | RCC_CR_HSERDY;
         test_rcc.CR = other;
         test_rcc.CFGR = preserved;
-        assert(clock_stm32f103_enable_pll((clock_pll_source_t)source, CLOCK_PLL_HSE_DIV1,
-                                          CLOCK_PLL_MUL6) == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_enable_pll((clock_pll_source_t)source, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL6) ==
+               CLOCK_INVALID_CONFIG);
         assert(test_rcc.CR == other);
         assert(test_rcc.CFGR == preserved);
 
         /* ON without RDY is enabled: only the PLL lock wait can time out. */
         uint32_t selected = source == CLOCK_PLL_HSE ? RCC_CR_HSEON : RCC_CR_HSION;
         test_rcc.CR |= selected;
-        assert(clock_stm32f103_enable_pll((clock_pll_source_t)source, CLOCK_PLL_HSE_DIV1,
-                                          CLOCK_PLL_MUL6) == CLOCK_STM32F103_TIMEOUT);
+        assert(clock_enable_pll((clock_pll_source_t)source, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL6) ==
+               CLOCK_TIMEOUT);
         assert(test_rcc.CR == (other | selected | RCC_CR_PLLON));
     }
 }
@@ -362,8 +357,8 @@ static void test_pll_validation(void) {
     for (unsigned i = 0; i < sizeof(invalid) / sizeof(invalid[0]); ++i) {
         clear_registers();
         test_rcc.CR = RCC_CR_HSION | RCC_CR_HSEON;
-        assert(clock_stm32f103_enable_pll(invalid[i].source, invalid[i].divider,
-                                          invalid[i].multiplier) == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_enable_pll(invalid[i].source, invalid[i].divider, invalid[i].multiplier) ==
+               CLOCK_INVALID_CONFIG);
         assert(test_rcc.CR == (RCC_CR_HSION | RCC_CR_HSEON) && test_rcc.CFGR == 0);
     }
 
@@ -380,19 +375,17 @@ static void test_pll_validation(void) {
         if (consumers[i] == 0) {
             test_rcc.APB1ENR = RCC_APB1ENR_USBEN;
         }
-        assert(clock_stm32f103_enable_pll(CLOCK_PLL_HSE, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL9) ==
-               CLOCK_STM32F103_IN_USE);
+        assert(clock_enable_pll(CLOCK_PLL_HSE, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL9) == CLOCK_IN_USE);
         assert(test_rcc.CR == RCC_CR_HSEON && test_rcc.CFGR == consumers[i]);
         test_rcc.CR = RCC_CR_PLLON | RCC_CR_PLLRDY;
-        assert(clock_stm32f103_disable_pll() == CLOCK_STM32F103_IN_USE);
+        assert(clock_disable_pll() == CLOCK_IN_USE);
         assert(test_rcc.CR == (RCC_CR_PLLON | RCC_CR_PLLRDY));
         assert(test_rcc.CFGR == consumers[i]);
     }
 
     clear_registers();
     test_rcc.CR = RCC_CR_HSEON | RCC_CR_PLLRDY;
-    assert(clock_stm32f103_enable_pll(CLOCK_PLL_HSE, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL9) ==
-           CLOCK_STM32F103_IN_USE);
+    assert(clock_enable_pll(CLOCK_PLL_HSE, CLOCK_PLL_HSE_DIV1, CLOCK_PLL_MUL9) == CLOCK_IN_USE);
     assert(test_rcc.CR == (RCC_CR_HSEON | RCC_CR_PLLRDY) && test_rcc.CFGR == 0);
 }
 
@@ -417,12 +410,12 @@ static void test_sysclk_selection(void) {
                     clear_registers();
                     test_rcc.CR = RCC_CR_HSION | RCC_CR_HSIRDY;
                     test_flash.ACR = FLASH_ACR_PRFTBS | FLASH_ACR_HLFCYA;
-                    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_HSI, ahb[a], apb[b], apb[c],
-                                                         adc[d]) == CLOCK_STM32F103_OK);
+                    assert(clock_select_sysclk(CLOCK_SYS_HSI, ahb[a], apb[b], apb[c], adc[d]) ==
+                           CLOCK_OK);
                     assert(SystemCoreClock == 8000000u / ahb[a]);
-                    assert(clock_stm32f103_get_pclk1_hz() == SystemCoreClock / apb[b]);
-                    assert(clock_stm32f103_get_pclk2_hz() == SystemCoreClock / apb[c]);
-                    assert(clock_stm32f103_get_adc_hz() == SystemCoreClock / apb[c] / adc[d]);
+                    assert(clock_get_pclk1_hz() == SystemCoreClock / apb[b]);
+                    assert(clock_get_pclk2_hz() == SystemCoreClock / apb[c]);
+                    assert(clock_get_adc_hz() == SystemCoreClock / apb[c] / adc[d]);
                     assert(test_rcc.APB2ENR == 0u);
                     assert(test_rcc.CR == (RCC_CR_HSION | RCC_CR_HSIRDY));
                     assert((test_flash.ACR & FLASH_ACR_LATENCY) == 0u);
@@ -452,8 +445,8 @@ static void test_sysclk_selection(void) {
         emulate_sysclk = true;
         clock_apb_divider_t apb1 = source == CLOCK_SYS_PLL ? CLOCK_APB_DIV2 : CLOCK_APB_DIV1;
         clock_adc_divider_t adc_divider = source == CLOCK_SYS_PLL ? CLOCK_ADC_DIV6 : CLOCK_ADC_DIV2;
-        assert(clock_stm32f103_select_sysclk((clock_system_source_t)source, CLOCK_AHB_DIV1, apb1,
-                                             CLOCK_APB_DIV1, adc_divider) == CLOCK_STM32F103_OK);
+        assert(clock_select_sysclk((clock_system_source_t)source, CLOCK_AHB_DIV1, apb1,
+                                   CLOCK_APB_DIV1, adc_divider) == CLOCK_OK);
         emulate_sysclk = false;
         assert(SystemCoreClock == (source == CLOCK_SYS_PLL ? 72000000u : 8000000u));
         assert(test_rcc.CR == cr);
@@ -461,7 +454,7 @@ static void test_sysclk_selection(void) {
         uint32_t changed = RCC_CFGR_SW | RCC_CFGR_SWS | RCC_CFGR_HPRE | RCC_CFGR_PPRE1 |
                            RCC_CFGR_PPRE2 | RCC_CFGR_ADCPRE;
         assert((test_rcc.CFGR & ~changed) == preserved);
-        assert(clock_stm32f103_get_adc_hz() == (source == CLOCK_SYS_PLL ? 12000000u : 4000000u));
+        assert(clock_get_adc_hz() == (source == CLOCK_SYS_PLL ? 12000000u : 4000000u));
         assert(test_rcc.APB2ENR == 0u);
         assert((test_flash.ACR & FLASH_ACR_LATENCY) == (source == CLOCK_SYS_PLL ? 2u : 0u));
         assert(sysclk_write_count == 3u);
@@ -477,11 +470,11 @@ static void test_sysclk_selection(void) {
     test_rcc.CFGR = RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL6;
     test_flash.ACR = FLASH_ACR_PRFTBS;
     emulate_sysclk = true;
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV2,
-                                         CLOCK_APB_DIV1, CLOCK_ADC_DIV4) == CLOCK_STM32F103_OK);
+    assert(clock_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV2, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV4) == CLOCK_OK);
     emulate_sysclk = false;
     assert(SystemCoreClock == 48000000u);
-    assert(clock_stm32f103_get_adc_hz() == 12000000u);
+    assert(clock_get_adc_hz() == 12000000u);
     assert((test_flash.ACR & FLASH_ACR_LATENCY) == 1u);
 
     /* The alternate x16 encoding must also update SystemCoreClock correctly. */
@@ -490,8 +483,8 @@ static void test_sysclk_selection(void) {
     test_rcc.CFGR = RCC_CFGR_PLLMULL | RCC_CFGR_ADCPRE_DIV6;
     test_flash.ACR = FLASH_ACR_PRFTBS;
     emulate_sysclk = true;
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV2,
-                                         CLOCK_APB_DIV1, CLOCK_ADC_DIV6) == CLOCK_STM32F103_OK);
+    assert(clock_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV2, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV6) == CLOCK_OK);
     emulate_sysclk = false;
     assert(SystemCoreClock == 64000000u);
 }
@@ -525,52 +518,46 @@ static void test_sysclk_errors(void) {
         test_rcc.CR = cr;
         test_rcc.CFGR = RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9;
         uint32_t cfgr = test_rcc.CFGR;
-        assert(clock_stm32f103_select_sysclk(invalid[i].source, invalid[i].ahb, invalid[i].apb1,
-                                             invalid[i].apb2,
-                                             invalid[i].adc) == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_sysclk(invalid[i].source, invalid[i].ahb, invalid[i].apb1,
+                                   invalid[i].apb2, invalid[i].adc) == CLOCK_INVALID_CONFIG);
         assert(test_rcc.CR == cr && test_rcc.CFGR == cfgr && test_flash.ACR == 0);
     }
     for (unsigned source = CLOCK_SYS_HSI; source <= CLOCK_SYS_PLL; ++source) {
         clear_registers();
-        assert(clock_stm32f103_select_sysclk((clock_system_source_t)source, CLOCK_AHB_DIV1,
-                                             CLOCK_APB_DIV1, CLOCK_APB_DIV1,
-                                             CLOCK_ADC_DIV2) == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_sysclk((clock_system_source_t)source, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
+                                   CLOCK_APB_DIV1, CLOCK_ADC_DIV2) == CLOCK_INVALID_CONFIG);
         assert(test_rcc.CR == 0 && test_rcc.CFGR == 0 && test_flash.ACR == 0);
     }
 
     clear_registers();
     test_rcc.CR = RCC_CR_PLLON | RCC_CR_PLLRDY;
     test_rcc.CFGR = RCC_CFGR_PLLMULL6;
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
-                                         CLOCK_APB_DIV1,
-                                         CLOCK_ADC_DIV2) == CLOCK_STM32F103_INVALID_CONFIG);
+    assert(clock_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_INVALID_CONFIG);
     assert(test_rcc.CR == (RCC_CR_PLLON | RCC_CR_PLLRDY));
     assert(test_rcc.CFGR == RCC_CFGR_PLLMULL6 && test_flash.ACR == 0);
 
     clear_registers();
     test_rcc.CR = RCC_CR_HSION;
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
-                                         CLOCK_APB_DIV1,
-                                         CLOCK_ADC_DIV2) == CLOCK_STM32F103_TIMEOUT);
+    assert(clock_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_TIMEOUT);
     assert(test_rcc.CR == RCC_CR_HSION && test_rcc.CFGR == 0 && test_flash.ACR == 0);
     test_rcc.CR |= RCC_CR_HSIRDY;
     test_rcc.CFGR = RCC_CFGR_SW_HSE;
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
-                                         CLOCK_APB_DIV1, CLOCK_ADC_DIV2) == CLOCK_STM32F103_IN_USE);
+    assert(clock_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_IN_USE);
     assert(test_rcc.CFGR == RCC_CFGR_SW_HSE && test_flash.ACR == 0);
     test_rcc.CFGR = 0;
     /* Without PRFTBS in RAM, stop before any bus/source changes. */
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
-                                         CLOCK_APB_DIV1,
-                                         CLOCK_ADC_DIV2) == CLOCK_STM32F103_TIMEOUT);
+    assert(clock_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_TIMEOUT);
     assert(test_rcc.CFGR == 0 && SystemCoreClock == HSI_VALUE);
 
     test_flash.ACR |= FLASH_ACR_PRFTBS;
     test_rcc.CR |= RCC_CR_HSEON | RCC_CR_HSERDY;
     /* No emulation: SWS never changes, so report the active HSI / 2 clock. */
-    assert(clock_stm32f103_select_sysclk(CLOCK_SYS_HSE, CLOCK_AHB_DIV1, CLOCK_APB_DIV1,
-                                         CLOCK_APB_DIV1,
-                                         CLOCK_ADC_DIV2) == CLOCK_STM32F103_TIMEOUT);
+    assert(clock_select_sysclk(CLOCK_SYS_HSE, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_TIMEOUT);
     assert(SystemCoreClock == HSI_VALUE / 2u);
     assert((test_rcc.CFGR & RCC_CFGR_SW) == RCC_CFGR_SW_HSE);
     assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_HSI);
@@ -600,38 +587,38 @@ static void test_usb_clock_selection(void) {
         test_rcc.APB2ENR = RCC_APB2ENR_ADC1EN;
         SystemCoreClockUpdate();
         uint32_t core = SystemCoreClock;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_OK);
+        assert(clock_select_usb_clock() == CLOCK_OK);
         assert(test_rcc.CFGR == (cfgr | configs[i].usbpre));
         assert(test_rcc.CR == cr);
         assert(test_rcc.APB1ENR == RCC_APB1ENR_TIM2EN);
         assert(test_rcc.APB2ENR == RCC_APB2ENR_ADC1EN);
         assert(SystemCoreClock == core && test_flash.ACR == 0u);
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_OK);
+        assert(clock_select_usb_clock() == CLOCK_OK);
 
         /* An active USB peripheral permits validation, but no divider change. */
         test_rcc.APB1ENR |= RCC_APB1ENR_USBEN;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_OK);
+        assert(clock_select_usb_clock() == CLOCK_OK);
         assert(test_rcc.CFGR == (cfgr | configs[i].usbpre));
         test_rcc.CFGR = cfgr | wrong;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_IN_USE);
+        assert(clock_select_usb_clock() == CLOCK_IN_USE);
         assert(test_rcc.CFGR == (cfgr | wrong) && test_rcc.CR == cr);
 
         /* An enabled but unlocked PLL cannot change USBPRE. */
         test_rcc.APB1ENR &= ~RCC_APB1ENR_USBEN;
         test_rcc.CR &= ~RCC_CR_PLLRDY;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_TIMEOUT);
+        assert(clock_select_usb_clock() == CLOCK_TIMEOUT);
         assert(test_rcc.CFGR == (cfgr | wrong));
         assert(test_rcc.CR == (cr & ~RCC_CR_PLLRDY));
 
         test_rcc.CR = cr & ~RCC_CR_PLLON;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_usb_clock() == CLOCK_INVALID_CONFIG);
         assert(test_rcc.CFGR == (cfgr | wrong));
         assert(test_rcc.CR == (cr & ~RCC_CR_PLLON));
 
         uint32_t input_on =
             (configs[i].pll_bits & RCC_CFGR_PLLSRC) != 0u ? RCC_CR_HSEON : RCC_CR_HSION;
         test_rcc.CR = cr & ~input_on;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_usb_clock() == CLOCK_INVALID_CONFIG);
         assert(test_rcc.CFGR == (cfgr | wrong) && test_rcc.CR == (cr & ~input_on));
     }
 
@@ -648,7 +635,7 @@ static void test_usb_clock_selection(void) {
         uint32_t cr = RCC_CR_HSION | RCC_CR_HSEON | RCC_CR_PLLON | RCC_CR_PLLRDY;
         test_rcc.CR = cr;
         test_rcc.CFGR = invalid[i] | RCC_CFGR_USBPRE;
-        assert(clock_stm32f103_select_usb_clock() == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_usb_clock() == CLOCK_INVALID_CONFIG);
         assert(test_rcc.CR == cr && test_rcc.CFGR == (invalid[i] | RCC_CFGR_USBPRE));
         assert(test_rcc.APB1ENR == 0u && SystemCoreClock == HSI_VALUE);
     }
@@ -656,11 +643,11 @@ static void test_usb_clock_selection(void) {
 
 static void assert_hse8_profile(uint32_t hz) {
     assert(SystemCoreClock == hz);
-    assert(clock_stm32f103_get_pclk1_hz() == hz / 2u);
-    assert(clock_stm32f103_get_pclk2_hz() == hz);
-    assert(clock_stm32f103_get_apb1_timer_hz() == hz);
-    assert(clock_stm32f103_get_apb2_timer_hz() == hz);
-    assert(clock_stm32f103_get_adc_hz() == 12000000u);
+    assert(clock_get_pclk1_hz() == hz / 2u);
+    assert(clock_get_pclk2_hz() == hz);
+    assert(clock_get_apb1_timer_hz() == hz);
+    assert(clock_get_apb2_timer_hz() == hz);
+    assert(clock_get_adc_hz() == 12000000u);
     assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_PLL);
     assert((test_rcc.CFGR & RCC_CFGR_PLLSRC) != 0u);
     assert((test_rcc.CFGR & RCC_CFGR_PLLXTPRE) == 0u);
@@ -674,11 +661,11 @@ static void assert_hse8_profile(uint32_t hz) {
 
 static void test_hse8_profiles(void) {
     static const struct {
-        clock_stm32f103_status_t (*apply)(void);
+        clock_status_t (*apply)(void);
         uint32_t hz;
     } profiles[] = {
-        {clock_stm32f103_profile_hse8_72mhz, 72000000u},
-        {clock_stm32f103_profile_hse8_48mhz, 48000000u},
+        {clock_profile_hse8_72mhz, 72000000u},
+        {clock_profile_hse8_48mhz, 48000000u},
     };
     for (unsigned i = 0; i < sizeof(profiles) / sizeof(profiles[0]); ++i) {
         for (unsigned start = 0; start < 3; ++start) {
@@ -701,14 +688,14 @@ static void test_hse8_profiles(void) {
             SystemCoreClockUpdate();
             emulate_sysclk = true;
             emulate_oscillators = true;
-            assert(profiles[i].apply() == CLOCK_STM32F103_OK);
+            assert(profiles[i].apply() == CLOCK_OK);
             assert_hse8_profile(profiles[i].hz);
             /* Reapplication and switching to the other profile must also work. */
             sysclk_write_count = 0;
-            assert(profiles[i].apply() == CLOCK_STM32F103_OK);
+            assert(profiles[i].apply() == CLOCK_OK);
             assert_hse8_profile(profiles[i].hz);
             sysclk_write_count = 0;
-            assert(profiles[1u - i].apply() == CLOCK_STM32F103_OK);
+            assert(profiles[1u - i].apply() == CLOCK_OK);
             assert_hse8_profile(profiles[1u - i].hz);
             assert(test_rcc.APB1ENR == RCC_APB1ENR_TIM2EN);
             assert(test_rcc.APB2ENR == RCC_APB2ENR_ADC1EN);
@@ -728,7 +715,7 @@ static void test_hse8_profiles(void) {
             if (dependency == 0) {
                 test_rcc.APB1ENR = RCC_APB1ENR_USBEN;
             }
-            assert(profiles[i].apply() == CLOCK_STM32F103_IN_USE);
+            assert(profiles[i].apply() == CLOCK_IN_USE);
             assert(test_rcc.CR == 0u && test_rcc.CFGR == cfgr && test_flash.ACR == 0u);
         }
 
@@ -738,7 +725,7 @@ static void test_hse8_profiles(void) {
             emulate_sysclk = true;
             emulate_oscillators = true;
             stalled_ready_mask = stalled[stage];
-            assert(profiles[i].apply() == CLOCK_STM32F103_TIMEOUT);
+            assert(profiles[i].apply() == CLOCK_TIMEOUT);
             assert(SystemCoreClock == HSI_VALUE);
             assert((test_rcc.CFGR & RCC_CFGR_SW) == RCC_CFGR_SW_HSI);
             if (stage < 2) {
@@ -830,7 +817,7 @@ static void test_system_configs(void) {
             emulate_sysclk = true;
             emulate_oscillators = true;
             if (start == 1) {
-                assert(clock_stm32f103_profile_hse8_72mhz() == CLOCK_STM32F103_OK);
+                assert(clock_profile_hse8_72mhz() == CLOCK_OK);
             } else {
                 /* HSI-based configurations must not need HSE startup. */
                 if (cases[i].config.source == CLOCK_SYS_HSI ||
@@ -848,11 +835,11 @@ static void test_system_configs(void) {
             test_rcc.BDCR = RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSE;
             test_rcc.CSR = RCC_CSR_LSION | RCC_CSR_LSIRDY;
             sysclk_write_count = 0;
-            assert(clock_stm32f103_apply_system_config(&cases[i].config) == CLOCK_STM32F103_OK);
+            assert(clock_apply_system_config(&cases[i].config) == CLOCK_OK);
             assert(SystemCoreClock == cases[i].hclk);
-            assert(clock_stm32f103_get_pclk1_hz() == cases[i].pclk1);
-            assert(clock_stm32f103_get_pclk2_hz() == cases[i].pclk2);
-            assert(clock_stm32f103_get_adc_hz() == cases[i].adc);
+            assert(clock_get_pclk1_hz() == cases[i].pclk1);
+            assert(clock_get_pclk2_hz() == cases[i].pclk2);
+            assert(clock_get_adc_hz() == cases[i].adc);
             assert((test_rcc.CFGR & RCC_CFGR_SWS) ==
                    ((uint32_t)cases[i].config.source << RCC_CFGR_SWS_Pos));
             assert(((test_rcc.CR & RCC_CR_PLLON) != 0u) ==
@@ -866,7 +853,7 @@ static void test_system_configs(void) {
             assert(test_systick.CTRL == SysTick_CTRL_TICKINT_Msk);
             assert(test_systick.LOAD == 999u && test_systick.VAL == 123u);
             sysclk_write_count = 0;
-            assert(clock_stm32f103_apply_system_config(&cases[i].config) == CLOCK_STM32F103_OK);
+            assert(clock_apply_system_config(&cases[i].config) == CLOCK_OK);
             assert(SystemCoreClock == cases[i].hclk);
         }
     }
@@ -883,7 +870,7 @@ static void assert_invalid_system_config(const clock_system_config_t *config) {
     uint32_t cr = test_rcc.CR;
     uint32_t cfgr = test_rcc.CFGR;
     uint32_t flash = test_flash.ACR;
-    assert(clock_stm32f103_apply_system_config(config) == CLOCK_STM32F103_INVALID_CONFIG);
+    assert(clock_apply_system_config(config) == CLOCK_INVALID_CONFIG);
     assert(test_rcc.CR == cr && test_rcc.CFGR == cfgr && test_flash.ACR == flash);
     assert(SystemCoreClock == 72000000u);
 }
@@ -946,7 +933,7 @@ static void test_system_config_validation(void) {
     c.pll_source = (clock_pll_source_t)-1;
     c.hse_divider = (clock_pll_hse_divider_t)-1;
     c.multiplier = (clock_pll_multiplier_t)-1;
-    assert(clock_stm32f103_apply_system_config(&c) == CLOCK_STM32F103_OK);
+    assert(clock_apply_system_config(&c) == CLOCK_OK);
     assert(SystemCoreClock == HSI_VALUE && (test_rcc.CR & RCC_CR_PLLON) == 0u);
 }
 
@@ -956,9 +943,9 @@ static void test_reset_profile(void) {
         emulate_sysclk = true;
         emulate_oscillators = true;
         if (start == 1) {
-            assert(clock_stm32f103_profile_hse8_48mhz() == CLOCK_STM32F103_OK);
+            assert(clock_profile_hse8_48mhz() == CLOCK_OK);
         } else if (start == 2) {
-            assert(clock_stm32f103_profile_hse8_72mhz() == CLOCK_STM32F103_OK);
+            assert(clock_profile_hse8_72mhz() == CLOCK_OK);
         } else if (start == 3) {
             const clock_system_config_t config = {
                 .source = CLOCK_SYS_PLL,
@@ -969,7 +956,7 @@ static void test_reset_profile(void) {
                 .apb2_divider = CLOCK_APB_DIV1,
                 .adc_divider = CLOCK_ADC_DIV6,
             };
-            assert(clock_stm32f103_apply_system_config(&config) == CLOCK_STM32F103_OK);
+            assert(clock_apply_system_config(&config) == CLOCK_OK);
         }
         test_rcc.CFGR |= RCC_CFGR_MCO_HSI;
         test_rcc.APB1ENR = RCC_APB1ENR_TIM2EN;
@@ -981,11 +968,11 @@ static void test_reset_profile(void) {
         uint32_t hse = test_rcc.CR & (RCC_CR_HSEON | RCC_CR_HSERDY);
         for (unsigned repeat = 0; repeat < 2; ++repeat) {
             sysclk_write_count = 0;
-            assert(clock_stm32f103_profile_reset() == CLOCK_STM32F103_OK);
+            assert(clock_profile_reset() == CLOCK_OK);
             assert(SystemCoreClock == HSI_VALUE);
-            assert(clock_stm32f103_get_pclk1_hz() == HSI_VALUE);
-            assert(clock_stm32f103_get_pclk2_hz() == HSI_VALUE);
-            assert(clock_stm32f103_get_adc_hz() == HSI_VALUE / 2u);
+            assert(clock_get_pclk1_hz() == HSI_VALUE);
+            assert(clock_get_pclk2_hz() == HSI_VALUE);
+            assert(clock_get_adc_hz() == HSI_VALUE / 2u);
             /* All source, multiplier, and divider fields have reset encodings. */
             assert(test_rcc.CFGR == RCC_CFGR_MCO_HSI);
             assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == 0u);
@@ -1003,11 +990,11 @@ static void test_reset_profile(void) {
 
     clear_registers();
     test_rcc.APB1ENR = RCC_APB1ENR_USBEN;
-    assert(clock_stm32f103_profile_reset() == CLOCK_STM32F103_IN_USE);
+    assert(clock_profile_reset() == CLOCK_IN_USE);
     assert(test_rcc.CR == 0u && test_rcc.CFGR == 0u && test_flash.ACR == 0u);
     test_rcc.APB1ENR = 0u;
     test_rcc.CFGR = RCC_CFGR_MCO_PLLCLK_DIV2;
-    assert(clock_stm32f103_profile_reset() == CLOCK_STM32F103_IN_USE);
+    assert(clock_profile_reset() == CLOCK_IN_USE);
     assert(test_rcc.CR == 0u && test_rcc.CFGR == RCC_CFGR_MCO_PLLCLK_DIV2);
 }
 
@@ -1030,40 +1017,37 @@ static void test_systick_clock(void) {
         assert(SystemCoreClock == clocks[i].hclk);
         test_systick.LOAD = 999u;
         test_systick.VAL = 123u;
-        assert(clock_stm32f103_get_systick_hz() == clocks[i].divided);
+        assert(clock_get_systick_hz() == clocks[i].divided);
         test_systick.CTRL = SysTick_CTRL_TICKINT_Msk;
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_STM32F103_OK);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_OK);
         assert(test_systick.CTRL == (SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_CLKSOURCE_Msk));
-        assert(clock_stm32f103_get_systick_hz() == clocks[i].hclk);
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) ==
-               CLOCK_STM32F103_OK);
+        assert(clock_get_systick_hz() == clocks[i].hclk);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) == CLOCK_OK);
         assert(test_systick.CTRL == SysTick_CTRL_TICKINT_Msk);
-        assert(clock_stm32f103_get_systick_hz() == clocks[i].divided);
+        assert(clock_get_systick_hz() == clocks[i].divided);
         assert(test_systick.LOAD == 999u && test_systick.VAL == 123u);
         assert(test_rcc.CFGR == clocks[i].cfgr && SystemCoreClock == clocks[i].hclk);
         assert(test_rcc.CR == 0u && test_rcc.APB1ENR == 0u && test_rcc.APB2ENR == 0u);
 
         /* Queries report the input clock even when the counter is running. */
         test_systick.CTRL |= SysTick_CTRL_ENABLE_Msk;
-        assert(clock_stm32f103_get_systick_hz() == clocks[i].divided);
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) ==
-               CLOCK_STM32F103_OK);
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_STM32F103_IN_USE);
+        assert(clock_get_systick_hz() == clocks[i].divided);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) == CLOCK_OK);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_IN_USE);
         assert(test_systick.CTRL == (SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk));
         test_systick.CTRL |= SysTick_CTRL_CLKSOURCE_Msk;
-        assert(clock_stm32f103_get_systick_hz() == clocks[i].hclk);
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_STM32F103_OK);
-        assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) ==
-               CLOCK_STM32F103_IN_USE);
+        assert(clock_get_systick_hz() == clocks[i].hclk);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_OK);
+        assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) == CLOCK_IN_USE);
         assert(test_systick.CTRL ==
                (SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_CLKSOURCE_Msk));
         assert(test_systick.LOAD == 999u && test_systick.VAL == 123u);
     }
 
     clear_registers();
-    assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_STM32F103_OK);
+    assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK) == CLOCK_OK);
     assert(test_systick.CTRL == SysTick_CTRL_CLKSOURCE_Msk);
-    assert(clock_stm32f103_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) == CLOCK_STM32F103_OK);
+    assert(clock_select_systick_source(CLOCK_SYSTICK_HCLK_DIV8) == CLOCK_OK);
     assert(test_systick.CTRL == 0u);
     static const clock_systick_source_t invalid[] = {
         (clock_systick_source_t)-1,
@@ -1071,7 +1055,7 @@ static void test_systick_clock(void) {
         (clock_systick_source_t)256,
     };
     for (unsigned i = 0; i < sizeof(invalid) / sizeof(invalid[0]); ++i) {
-        assert(clock_stm32f103_select_systick_source(invalid[i]) == CLOCK_STM32F103_INVALID_CONFIG);
+        assert(clock_select_systick_source(invalid[i]) == CLOCK_INVALID_CONFIG);
         assert(test_systick.CTRL == 0u && test_systick.LOAD == 0u && test_systick.VAL == 0u);
     }
 }

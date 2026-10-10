@@ -6,7 +6,7 @@
  */
 
 #include "tim.h"
-#include "clock_stm32f103.h"
+#include "clock.h"
 #include "stm32f1xx.h"
 
 /* A 10 kHz counter keeps the 16-bit prescaler in range even at 72 MHz. */
@@ -18,7 +18,7 @@ void tim2_1hz_init(void) {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 
     // Set prescaler value
-    TIM2->PSC = (clock_stm32f103_get_tim_hz(CLOCK_TIM2) / TIM_PRESCALER_HZ) - 1u;
+    TIM2->PSC = (clock_get_tim_hz(CLOCK_TIM2) / TIM_PRESCALER_HZ) - 1u;
 
     // Set auto-reload value
     TIM2->ARR = TIM_ARR_1HZ;

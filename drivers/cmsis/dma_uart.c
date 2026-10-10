@@ -6,7 +6,7 @@
  */
 
 #include "dma_uart.h"
-#include "clock_stm32f103.h"
+#include "clock.h"
 #include "stm32f1xx.h"
 #include "uart.h"
 #include <stdint.h>
@@ -37,7 +37,7 @@ void uart1_rx_tx_init(void) {
     RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
     // Configure uart baudrate
-    USART1->BRR = compute_uart_bd(clock_stm32f103_get_pclk2_hz(), UART1_DMA_BAUDRATE);
+    USART1->BRR = compute_uart_bd(clock_get_pclk2_hz(), UART1_DMA_BAUDRATE);
 
     // Select to use DMA for TX and RX
     USART1->CR3 = (USART_CR3_DMAR | USART_CR3_DMAT);

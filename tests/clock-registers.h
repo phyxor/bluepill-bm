@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "clock_stm32f103.h"
+#include "clock.h"
 #include "stm32f1xx.h"
 
 extern RCC_TypeDef test_rcc;

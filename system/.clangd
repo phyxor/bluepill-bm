@@ -1,6 +1,12 @@
 CompileFlags:
   Add:
     - -I../include
+
+---
+If:
+  PathMatch: system_stm32f103\.c
+CompileFlags:
+  Add:
     - -I../vendor/STM32CubeF1/Drivers/CMSIS/Core/Include
     - -I../vendor/STM32CubeF1/Drivers/CMSIS/Device/ST/STM32F1xx/Include
     - -DUSE_CMSIS

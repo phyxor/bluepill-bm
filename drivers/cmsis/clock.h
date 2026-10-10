@@ -5,12 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-// Copyright (C) 2026 Phyxor Microsystems
-// SPDX-FileContributor: Pablo Palazon
-//
-// SPDX-License-Identifier: BSD-3-Clause
-#ifndef CLOCK_STM32F103_H
-#define CLOCK_STM32F103_H
+#ifndef CLOCK_H
+#define CLOCK_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,16 +22,11 @@
 #endif
 
 // This value limits register reads for each wait. It does not measure milliseconds.
-#ifndef CLOCK_STM32F103_DEFAULT_TIMEOUT_ITERATIONS
-#define CLOCK_STM32F103_DEFAULT_TIMEOUT_ITERATIONS 1000000u
+#ifndef CLOCK_DEFAULT_TIMEOUT_ITERATIONS
+#define CLOCK_DEFAULT_TIMEOUT_ITERATIONS 1000000u
 #endif
 
-typedef enum {
-    CLOCK_STM32F103_OK,
-    CLOCK_STM32F103_INVALID_CONFIG,
-    CLOCK_STM32F103_TIMEOUT,
-    CLOCK_STM32F103_IN_USE
-} clock_stm32f103_status_t;
+typedef enum { CLOCK_OK, CLOCK_INVALID_CONFIG, CLOCK_TIMEOUT, CLOCK_IN_USE } clock_status_t;
 
 // SYSCLK is the system clock.
 typedef enum { CLOCK_SYS_HSI, CLOCK_SYS_HSE, CLOCK_SYS_PLL } clock_system_source_t;
@@ -111,55 +102,53 @@ typedef struct {
 } clock_system_config_t;
 
 // Enable oscillators
-clock_stm32f103_status_t clock_stm32f103_enable_hsi(void);
-clock_stm32f103_status_t clock_stm32f103_enable_hse(void);
-clock_stm32f103_status_t clock_stm32f103_enable_lsi(void);
+clock_status_t clock_enable_hsi(void);
+clock_status_t clock_enable_hse(void);
+clock_status_t clock_enable_lsi(void);
 // LSE functions enable PWR/BKP clocks and allow writes to the backup registers.
 // LSE functions keep the real-time clock (RTC) data.
-clock_stm32f103_status_t clock_stm32f103_enable_lse(void);
+clock_status_t clock_enable_lse(void);
 
 // Enable PLL, but first enable the requested oscillator
-clock_stm32f103_status_t clock_stm32f103_enable_pll(clock_pll_source_t source,
-                                                    clock_pll_hse_divider_t hse_divider,
-                                                    clock_pll_multiplier_t multiplier);
+clock_status_t clock_enable_pll(clock_pll_source_t source, clock_pll_hse_divider_t hse_divider,
+                                clock_pll_multiplier_t multiplier);
 
 // Disable returns IN_USE when another clock needs the oscillator.
-clock_stm32f103_status_t clock_stm32f103_disable_hsi(void);
-clock_stm32f103_status_t clock_stm32f103_disable_hse(void);
-clock_stm32f103_status_t clock_stm32f103_disable_lsi(void);
-clock_stm32f103_status_t clock_stm32f103_disable_lse(void);
+clock_status_t clock_disable_hsi(void);
+clock_status_t clock_disable_hse(void);
+clock_status_t clock_disable_lsi(void);
+clock_status_t clock_disable_lse(void);
 // Disable stops PLL and keeps its input oscillator enabled.
 // Disable keeps the PLL source, divider, and multiplier configuration.
-clock_stm32f103_status_t clock_stm32f103_disable_pll(void);
+clock_status_t clock_disable_pll(void);
 
 // Enable first the selected HSI, HSE, or PLL source.
 // Call it before peripherals that depend on clock timing start.
-clock_stm32f103_status_t clock_stm32f103_select_sysclk(clock_system_source_t source,
-                                                       clock_ahb_divider_t ahb_divider,
-                                                       clock_apb_divider_t apb1_divider,
-                                                       clock_apb_divider_t apb2_divider,
-                                                       clock_adc_divider_t adc_divider);
-clock_stm32f103_status_t clock_stm32f103_select_systick_source(clock_systick_source_t source);
+clock_status_t clock_select_sysclk(clock_system_source_t source, clock_ahb_divider_t ahb_divider,
+                                   clock_apb_divider_t apb1_divider,
+                                   clock_apb_divider_t apb2_divider,
+                                   clock_adc_divider_t adc_divider);
+clock_status_t clock_select_systick_source(clock_systick_source_t source);
 // Compute the USB divider if it's possible according to PLL configuration
-clock_stm32f103_status_t clock_stm32f103_select_usb_clock(void);
+clock_status_t clock_select_usb_clock(void);
 
 // Apply a defined configuration
-clock_stm32f103_status_t clock_stm32f103_apply_system_config(const clock_system_config_t *config);
+clock_status_t clock_apply_system_config(const clock_system_config_t *config);
 
 // Apply default clock configuration
-clock_stm32f103_status_t clock_stm32f103_profile_reset(void);
+clock_status_t clock_profile_reset(void);
 
 // Apply specific configuration for 72MHz and 48MHz using HSE
-clock_stm32f103_status_t clock_stm32f103_profile_hse8_72mhz(void);
-clock_stm32f103_status_t clock_stm32f103_profile_hse8_48mhz(void);
+clock_status_t clock_profile_hse8_72mhz(void);
+clock_status_t clock_profile_hse8_48mhz(void);
 
 // Return frequencies in Hz from SystemCoreClock and the clock register dividers.
-uint32_t clock_stm32f103_get_pclk1_hz(void);
-uint32_t clock_stm32f103_get_pclk2_hz(void);
-uint32_t clock_stm32f103_get_apb1_timer_hz(void);
-uint32_t clock_stm32f103_get_apb2_timer_hz(void);
-uint32_t clock_stm32f103_get_tim_hz(clock_timer_t timer);
-uint32_t clock_stm32f103_get_adc_hz(void);
-uint32_t clock_stm32f103_get_systick_hz(void);
+uint32_t clock_get_pclk1_hz(void);
+uint32_t clock_get_pclk2_hz(void);
+uint32_t clock_get_apb1_timer_hz(void);
+uint32_t clock_get_apb2_timer_hz(void);
+uint32_t clock_get_tim_hz(clock_timer_t timer);
+uint32_t clock_get_adc_hz(void);
+uint32_t clock_get_systick_hz(void);
 
 #endif

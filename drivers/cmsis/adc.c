@@ -6,7 +6,7 @@
  */
 
 #include "adc.h"
-#include "clock_stm32f103.h"
+#include "clock.h"
 #include <stdint.h>
 
 void adc_startup_delay(void) {

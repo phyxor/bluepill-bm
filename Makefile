@@ -7,6 +7,7 @@ APP ?= bare-blink
 PROJECT := bluepill-$(APP)
 
 BUILD_DIR := build
+OBJECT_DIR := $(BUILD_DIR)/$(APP)
 SYSTEM_DIR := system
 APP_DIR := apps/$(APP)
 CMSIS_DRIVER_DIR := drivers/cmsis
@@ -26,25 +27,27 @@ OPENOCD := openocd
 
 CPU_FLAGS := -mcpu=cortex-m3 -mthumb
 COMMON_FLAGS := $(CPU_FLAGS) -Wall -Wextra -Werror -ffunction-sections -fdata-sections -g3 -O0
-CFLAGS := $(COMMON_FLAGS) -std=c11 -Iinclude
+CFLAGS := $(COMMON_FLAGS) -std=c11 -Iinclude -MMD -MP
 ASFLAGS := $(COMMON_FLAGS) -x assembler-with-cpp
 LDFLAGS := $(CPU_FLAGS) -T$(LINKER_SCRIPT) -nostartfiles -Wl,--gc-sections -Wl,-Map=$(BUILD_DIR)/$(PROJECT).map --specs=nano.specs --specs=nosys.specs
 LDLIBS := -lm
 
 CMSIS_CFLAGS := -I$(CMSIS_CORE_INC) -I$(CMSIS_DEVICE_INC) -DUSE_CMSIS -DSTM32F103xB
 
-# The shared system runtime always uses CMSIS. Bare-register applications stay
-# limited to local headers.
-SYSTEM_CFLAGS := $(CFLAGS) $(CMSIS_CFLAGS)
-
 ifneq ($(filter cmsis-%,$(APP)),)
  CFLAGS += $(CMSIS_CFLAGS) -I$(CMSIS_DRIVER_DIR)
+else ifeq ($(filter bare-%,$(APP)),)
+ $(error Unsupported APP layer '$(APP)': expected bare-* or cmsis-*)
 endif
 
 C_SOURCES := $(wildcard $(SYSTEM_DIR)/*.c)
 C_SOURCES += $(wildcard $(APP_DIR)/*.c)
 ifneq ($(filter cmsis-%,$(APP)),)
 C_SOURCES += $(wildcard $(CMSIS_DRIVER_DIR)/*.c)
+else
+# Bare firmware uses local registers for SystemInit and has no CMSIS dependency.
+C_SOURCES := $(filter-out $(SYSTEM_DIR)/system_stm32f103.c,$(C_SOURCES))
+C_SOURCES += $(wildcard $(SYSTEM_DIR)/bare/*.c)
 endif
 ASM_SOURCES :=
 
@@ -52,8 +55,9 @@ ifeq ($(wildcard $(APP_DIR)),)
 $(error Unknown APP '$(APP)': expected directory $(APP_DIR))
 endif
 
-OBJECTS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(C_SOURCES))
-OBJECTS += $(patsubst %.s,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
+OBJECTS := $(patsubst %.c,$(OBJECT_DIR)/%.o,$(C_SOURCES))
+OBJECTS += $(patsubst %.s,$(OBJECT_DIR)/%.o,$(ASM_SOURCES))
+DEPFILES := $(OBJECTS:.o=.d)
 
 ELF := $(BUILD_DIR)/$(PROJECT).elf
 BIN := $(BUILD_DIR)/$(PROJECT).bin
@@ -66,15 +70,11 @@ all: $(ELF) $(BIN) $(HEX) size
 $(ELF): $(OBJECTS) $(LINKER_SCRIPT)
 	$(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $@
 
-$(BUILD_DIR)/system/%.o: system/%.c
-	mkdir -p $(dir $@)
-	$(CC) $(SYSTEM_CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/%.o: %.c
+$(OBJECT_DIR)/%.o: %.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: %.s
+$(OBJECT_DIR)/%.o: %.s
 	mkdir -p $(dir $@)
 	$(CC) $(ASFLAGS) -c $< -o $@
 
@@ -112,3 +112,5 @@ debug: $(ELF)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+-include $(DEPFILES)
