@@ -1,3 +1,8 @@
+# Copyright (C) 2026 Phyxor Microsystems
+# SPDX-FileContributor: Pablo Palazon
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Firmware build outputs
 build/
 *.o
@@ -30,3 +35,6 @@ site/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

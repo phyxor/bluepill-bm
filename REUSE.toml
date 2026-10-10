@@ -9,9 +9,13 @@ version = 1
 path = [
     ".clang-format",
     ".gitignore",
+    ".ignore",
     ".gitmodules",
     ".nvim.lua",
     ".pre-commit-config.yaml",
+    ".mcp.json",
+    ".claude/**/*",
+    "opencode.json",
     "Makefile",
     "mise.toml",
     "mkdocs.yml",

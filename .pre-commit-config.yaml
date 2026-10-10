@@ -26,6 +26,7 @@ repos:
         entry: >-
           bash -c 'reuse annotate --contributor "$(git config --get user.name)" -c "Phyxor Microsystems" -l BSD-3-Clause --copyright-prefix string-c --merge-copyrights --skip-unrecognised "$@"' --
         language: system
+        files: \.(c|h)$
         exclude: ^(vendor|docs)/
       - id: clang-format
         name: clang-format
