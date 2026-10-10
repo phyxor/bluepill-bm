@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef GPIO_H_
-#define GPIO_H_
+#ifndef BOARD_LED_H_
+#define BOARD_LED_H_
 
 #include "stm32f1xx.h"
 
@@ -15,4 +15,4 @@ void board_led_on(void);
 void board_led_off(void);
 void board_led_toggle(void);
 
-#endif /* GPIO_H_ */
+#endif /* BOARD_LED_H_ */

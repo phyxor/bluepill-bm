@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "gpio.h"
+#include "board_led.h"
 
 #define LED_PIN 13u
 #define BLINK_DELAY 800000u

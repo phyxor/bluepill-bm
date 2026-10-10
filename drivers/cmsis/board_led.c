@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "gpio.h"
+#include "board_led.h"
 
 void board_led_init(void) {
     // Enabling GPIO Port C Clock

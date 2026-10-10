@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "gpio.h"
+#include "board_led.h"
 #include "gpio_exti.h"
 #include "systick.h"
 #include "stm32f103xb.h"
