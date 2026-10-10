@@ -5,9 +5,7 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { calculate, toC, planRtc, planIwdg, presets } = require("../docs/assets/js/clock-model.js");
-const { spawnSync } = require("node:child_process");
-const path = require("node:path");
+const { calculate, planRtc, planIwdg, presets } = require("../docs/assets/js/clock-model.js");
 const hz = (result, name) => result.clocks[name].hz;
 const field = (result, name) => result.fields.find((entry) => entry.name === name).binary;
 
@@ -215,30 +213,4 @@ test("hardware checks follow selected sources and distinguish ready flags from r
   assert.match(reset.fields.find((entry) => entry.name === "RCC_CR.PLLON").check, /PLLRDY = 0/);
   assert.match(reset.fields.find((entry) => entry.name === "RCC_BDCR.RTCEN").check, /do not wait/);
   assert.ok(r.fields.every((entry) => typeof entry.check === "string" && entry.check.length > 0));
-});
-
-test("exported structs and usage compile against the public C API for every profile", () => {
-  for (const [name, preset] of Object.entries(presets)) {
-    const exported = toC(preset);
-    assert.deepEqual(exported.errors, [], name);
-    const compiled = spawnSync("arm-none-eabi-gcc", ["-mcpu=cortex-m3", "-mthumb",
-      "-std=c11", "-Wall", "-Wextra", "-Werror", "-fsyntax-only", "-x", "c",
-      "-I", path.join(__dirname, "../include"), "-"], { input: exported.code, encoding: "utf8" });
-    assert.equal(compiled.status, 0, `${name}: ${compiled.error || compiled.stderr}`);
-  }
-});
-
-test("C export omits gated peripherals and includes independent RTC and IWDG configs", () => {
-  const r = toC({ ...presets.hse72, lseOn: true, rtcOn: true, rtcSource: "lse", iwdgOn: true });
-  assert.deepEqual(r.errors, []);
-  assert.match(r.code, /\.source = CLOCK_RTC_LSE/);
-  assert.match(r.code, /clock_stm32f103_configure_iwdg\(&iwdg_clock_config\)/);
-  assert.doesNotMatch(r.code, /ADC1EN|USBEN|TIM1EN|SysTick_CTRL|RCC_CFGR\.MCO/);
-  assert.equal(toC(presets.hse72).code, toC({ ...presets.hse72, tim1On: true, adcOn: true }).code);
-});
-
-test("C export rejects invalid configurations and unsafe gated ADC dividers", () => {
-  assert.ok(toC({ ...presets.hse72, latency: 0 }).errors.length);
-  assert.ok(toC({ ...presets.hse72, adcDivider: 2 }).errors.some((m) => m.includes("even when")));
-  assert.equal(toC({ ...presets.hse72, adcDivider: 2 }).code, "");
 });

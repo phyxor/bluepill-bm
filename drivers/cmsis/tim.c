@@ -6,25 +6,29 @@
  */
 
 #include "tim.h"
-#include "board_clock.h"
-#include "stm32f103xb.h"
+#include "clock_stm32f103.h"
+#include "stm32f1xx.h"
 
-#define TIM_PRESCALER_HZ 1000u
-#define TIM_PSC_1HZ ((PCLK1_HZ / TIM_PRESCALER_HZ) - 1u)
-#define TIM_ARR_1HZ 999 // 1000 - 1
+/* A 10 kHz counter keeps the 16-bit prescaler in range even at 72 MHz. */
+#define TIM_PRESCALER_HZ 10000u
+#define TIM_ARR_1HZ (TIM_PRESCALER_HZ - 1u)
 
 void tim2_1hz_init(void) {
     // Enable TIM2 on APB1 peripherial bus
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 
     // Set prescaler value
-    TIM2->PSC = TIM_PSC_1HZ;
+    TIM2->PSC = (clock_stm32f103_get_tim_hz(CLOCK_TIM2) / TIM_PRESCALER_HZ) - 1u;
 
     // Set auto-reload value
     TIM2->ARR = TIM_ARR_1HZ;
 
     // Clear counter
     TIM2->CNT = 0;
+
+    // Load the buffered prescaler before starting the first period
+    TIM2->EGR = TIM_EGR_UG;
+    TIM2->SR &= ~TIM_SR_UIF;
 
     // Enable timer
     TIM2->CR1 = TIM_CR1_CEN;

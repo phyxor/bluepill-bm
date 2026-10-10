@@ -9,7 +9,6 @@
 #include "rtc.h"
 #include "stm32f103xb.h"
 #include "uart.h"
-// #include "systick.h"
 #include <stdint.h>
 #include <stdio.h>
 

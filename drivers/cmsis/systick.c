@@ -6,15 +6,12 @@
  */
 
 #include "systick.h"
-#include "board_clock.h"
-#include "stm32f103xb.h"
+#include "stm32f1xx.h"
 #include <stdint.h>
-
-#define ONE_MSEC_LOAD (HCLK_HZ / 1000u)
 
 void systick_msec_delay(uint32_t delay) {
     // Load number of clock cycles per millisecond
-    SysTick->LOAD = ONE_MSEC_LOAD - 1;
+    SysTick->LOAD = (SystemCoreClock / 1000u) - 1u;
 
     // Clear systick current value register
     SysTick->VAL = 0;

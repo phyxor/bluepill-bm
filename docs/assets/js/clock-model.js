@@ -325,72 +325,7 @@ void SysTick_Handler(void) {
     return { clocks, fields, errors, flash, usb: usbInfo };
   }
 
-  function toC(input) {
-    const c = { ...defaults, ...input };
-    const result = calculate(c);
-    const errors = [...result.errors];
-    if (!Number.isInteger(c.hsi) || !Number.isInteger(c.hse)) errors.push("C export requires integer HSI and HSE frequencies in Hz.");
-    if (result.clocks.ADCCLK && result.clocks.ADCCLK.hz > 14000000) errors.push("C export requires ADCCLK at or below 14 MHz, even when the ADC clock is gated.");
-    if (c.hsi >= 24000000) errors.push("The C API requires HSI below 24 MHz for Flash reconfiguration.");
-    if (errors.length) return { code: "", errors };
-    const systemSource = { hsi: "CLOCK_SYS_HSI", hse: "CLOCK_SYS_HSE", pll: "CLOCK_SYS_PLL" }[c.systemSource];
-    const rtcSource = c.rtcOn ? { none: "CLOCK_RTC_NONE", lse: "CLOCK_RTC_LSE", lsi: "CLOCK_RTC_LSI", hse: "CLOCK_RTC_HSE_DIV128" }[c.rtcSource] : "CLOCK_RTC_NONE";
-    const code = `#include "clock_stm32f103.h"
-
-/* Apply at startup, before timing-dependent peripherals run.
- * This is a polling budget per wait, not a duration in milliseconds.
- * Set HSI_VALUE/HSE_VALUE for all runtime files if using different oscillators.
- */
-#define APP_CLOCK_WAIT_ITERATIONS 10000000u
-_Static_assert(HSI_VALUE == ${c.hsi}u, "Build HSI_VALUE must match this configuration");
-_Static_assert(HSE_VALUE == ${c.hse}u, "Build HSE_VALUE must match this configuration");
-
-const clock_system_config_t system_clock_config = {
-    .source = ${systemSource},
-    .pll_source = ${c.pllSource === "hse" ? "CLOCK_PLL_HSE" : "CLOCK_PLL_HSI_DIV2"},
-    .hsi_enabled = ${c.hsiOn},
-    .hse_enabled = ${c.hseOn},
-    .pll_enabled = ${c.pllOn},
-    .hse_pll_divider = ${c.hseDivider}u,
-    .pll_multiplier = ${c.multiplier}u,
-    .ahb_divider = ${c.ahbDivider}u,
-    .apb1_divider = ${c.apb1Divider}u,
-    .apb2_divider = ${c.apb2Divider}u,
-    .adc_divider = ${c.adcDivider}u,
-    .usb_divide_by_1_5 = ${c.usbDivider === 1.5},
-    .flash_wait_states = ${c.latency}u,
-    .flash_prefetch = ${c.prefetch},
-    .timeout_iterations = APP_CLOCK_WAIT_ITERATIONS,
-};
-
-const clock_rtc_config_t rtc_clock_config = {
-    .source = ${rtcSource},
-    .prescaler = ${c.rtcReload}u,
-    .reset_backup_domain = false, /* Set true only to clear RTC/backup data when changing source. */
-    .timeout_iterations = APP_CLOCK_WAIT_ITERATIONS,
-};
-
-const clock_iwdg_config_t iwdg_clock_config = {
-    .divider = ${c.iwdgDivider}u,
-    .timeout_iterations = APP_CLOCK_WAIT_ITERATIONS,
-};
-
-clock_stm32f103_status_t configure_clocks(void) {
-    clock_stm32f103_status_t status = clock_stm32f103_configure_system(&system_clock_config);
-    if (status != CLOCK_STM32F103_OK) {
-        return status;
-    }
-    status = clock_stm32f103_configure_rtc(&rtc_clock_config);
-    if (status != CLOCK_STM32F103_OK) {
-        return status;
-    }
-${c.iwdgOn || c.lsiOn ? "    /* Sets LSI and PR only. Configure reload/start IWDG separately. */\n    return clock_stm32f103_configure_iwdg(&iwdg_clock_config);" : "    /* Call clock_stm32f103_configure_iwdg(&iwdg_clock_config) when needed. */\n    return CLOCK_STM32F103_OK;"}
-}
-`;
-    return { code, errors: [] };
-  }
-
-  const model = { calculate, toC, planTimer, planSysTick, planRtc, planIwdg, timingToC, timingDefaults,
+  const model = { calculate, planTimer, planSysTick, planRtc, planIwdg, timingToC, timingDefaults,
     defaults, presets, ahbDividers, apbDividers, adcDividers, watchdogDividers };
   if (typeof module !== "undefined" && module.exports) module.exports = model;
   else root.BluePillClocks = model;

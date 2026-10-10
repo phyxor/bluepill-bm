@@ -6,8 +6,8 @@
  */
 
 #include "uart.h"
-#include "board_clock.h"
-#include "stm32f103xb.h"
+#include "clock_stm32f103.h"
+#include "stm32f1xx.h"
 #include <stdint.h>
 #define DBG_UART_BAUDRATE 115200
 
@@ -44,7 +44,7 @@ void uart1_init(void) {
     RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
     // Configure uart baudrate
-    USART1->BRR = compute_uart_bd(PCLK2_HZ, DBG_UART_BAUDRATE);
+    USART1->BRR = compute_uart_bd(clock_stm32f103_get_pclk2_hz(), DBG_UART_BAUDRATE);
 
     // Enable and configure transfer direction (Only transmitter enable)
     USART1->CR1 = (USART_CR1_UE | USART_CR1_TE);
@@ -72,7 +72,7 @@ void uart2_init(void) {
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 
     // Configure uart baudrate
-    USART2->BRR = compute_uart_bd(PCLK1_HZ, DBG_UART_BAUDRATE);
+    USART2->BRR = compute_uart_bd(clock_stm32f103_get_pclk1_hz(), DBG_UART_BAUDRATE);
 
     // Enable and configure transfer direction (Only transmitter enable)
     USART2->CR1 = (USART_CR1_UE | USART_CR1_TE);

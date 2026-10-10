@@ -90,6 +90,9 @@ void SystemCoreClockUpdate(void) {
 
     case RCC_CFGR_SWS_PLL: {
         uint32_t pll_multiplier = ((clock_source & RCC_CFGR_PLLMULL) >> RCC_CFGR_PLLMULL_Pos) + 2U;
+        if (pll_multiplier > 16U) {
+            pll_multiplier = 16U; /* Both top PLLMULL encodings mean x16. */
+        }
 
         if ((clock_source & RCC_CFGR_PLLSRC) == 0U) {
             SystemCoreClock = (HSI_VALUE / 2U) * pll_multiplier;
