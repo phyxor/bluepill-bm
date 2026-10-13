@@ -189,14 +189,25 @@
       }
       render();
     });
-    const next = button("3. Service / continue", actions, () => {
-      const w = model.wake(config);
-      if (["handler", "handlerRestored"].includes(phase) && config.sleepOnExit) {
+    el("p", "An interrupt service routine (ISR) clears the interrupt source. Main code handles application work after the ISR returns. An event-only wake skips the ISR step. SLEEPONEXIT returns to sleep instead of main code.", simulator, "lp-help");
+    const service = button("3. Service ISR / return", actions, () => {
+      const restored = phase === "handlerRestored";
+      log("Service ISR", `${model.sources[config.source].handler} clears its interrupt source and records any work for main code.`);
+      if (config.sleepOnExit) {
         phase = "sleeping";
         message = "The handler clears its source. SLEEPONEXIT returns directly to sleep, using the selected depth. Main code does not resume.";
         if (model.isStop(config)) message += " With SLEEPDEEP = 1 and PDDS = 0, this enters Stop again.";
         log("Exception return → sleep", message);
-      } else if (phase === "resumed" && w.deferred) {
+      } else {
+        phase = restored ? "resumedRestored" : "resumed";
+        message = `The ISR returns to main code after ${config.instruction}. Application work runs in the next step.`;
+        log("Exception return → main code", message);
+      }
+      render();
+    });
+    const main = button("4. Continue main code", actions, () => {
+      const w = model.wake(config);
+      if (phase === "resumed" && w.deferred) {
         config = { ...config, primask: false };
         controls.primask.checked = false;
         phase = "handlerRestored";
@@ -204,8 +215,8 @@
         log("Deferred ISR entry", message);
       } else {
         phase = "complete";
-        message = model.isStop(config) ? "The source is serviced, SLEEPDEEP is cleared, and software restores the selected clock setup. Normal code can continue." :
-          "The source is serviced. Normal code continues after the wait instruction and rechecks the work condition.";
+        message = model.isStop(config) ? "Main code clears SLEEPDEEP, restores the selected clock setup if needed, and rechecks the work condition before handling application work." :
+          "Main code rechecks the work condition before handling application work. A wake-up alone does not mean that work is ready.";
         log("Resume application", message);
       }
       render();
@@ -302,10 +313,11 @@
       writeText(route, `${error ? "Incorrect combination" : w.wakes ? "Wake route" : "No wake route"}: ${w.reason}`);
       route.dataset.wakes = String(w.wakes);
       writeText(result, error || message);
-      enter.disabled = Boolean(error) || ["sleeping", "handler", "handlerRestored", "resumed"].includes(phase);
+      enter.disabled = Boolean(error) || ["sleeping", "handler", "handlerRestored", "resumed", "resumedRestored"].includes(phase);
       trigger.disabled = phase !== "sleeping";
-      next.disabled = !["handler", "handlerRestored", "resumed"].includes(phase);
-      writeText(next, phase === "resumed" && w.deferred ? "3. Clear PRIMASK / enter ISR" : "3. Service / continue");
+      service.disabled = !["handler", "handlerRestored"].includes(phase);
+      main.disabled = !["resumed", "resumedRestored"].includes(phase);
+      writeText(main, phase === "resumed" && w.deferred ? "4. Main code: clear PRIMASK / enter ISR" : "4. Continue main code");
       controls.nvic.disabled = config.source === "systick" || !model.sources[config.source].irq || config.mode === "standby";
       controls.eventLatch.disabled = config.instruction !== "WFE";
       writeText(wakeHint, `${mode.title} · ${config.instruction} · SLEEPONEXIT = ${Number(config.sleepOnExit)} · NVIC IRQ: ${config.nvic ? "enabled" : "disabled"} · PRIMASK = ${Number(config.primask)} · SEVONPEND = ${Number(config.sevonpend)} · RTC clock: ${config.rtcClock.toUpperCase()}. Only the selected signal is configured. Other cards preview what happens if you select that configuration.`);
@@ -333,7 +345,7 @@
         el("strong", title, item);
         el("span", detail, item);
       }
-      const currentPhase = ["ready", "skipped", "complete"].includes(phase) ? "running" : phase;
+      const currentPhase = ["ready", "skipped", "complete", "resumedRestored"].includes(phase) ? "running" : phase;
       const currentClocks = model.clocks(config, currentPhase);
       inventoryHint.textContent = `Current trace: ${phase}. Only the selected clock preset and RTC / IWDG sources are enabled in this model.`;
       tableBody.replaceChildren();
