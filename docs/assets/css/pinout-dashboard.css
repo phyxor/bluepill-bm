@@ -26,9 +26,9 @@
 .pinout-info-card small { display: block; }
 .pinout-electrical-card { grid-column: 1 / -1; }
 .pinout-info-card li[data-active="true"] > code { font-weight: bold; }
-.pinout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: .7rem; align-items: start; }
+.pinout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: .7rem; align-items: start; }
 .pinout-drawing { min-width: 0; overflow-x: auto; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; background: #fafcff; }
-.pinout-controls { min-width: 0; min-height: 0; height: clamp(420px, 75vh, 760px); overflow-y: auto; overscroll-behavior-y: contain; padding: 0 .5rem .5rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; }
+.pinout-controls { min-width: 0; min-height: 0; height: auto; align-self: stretch; contain: size; overflow-y: auto; overscroll-behavior-y: contain; padding: 0 .5rem .5rem; border: 1px solid var(--md-default-fg-color--lighter); border-radius: .25rem; }
 .pinout-controls > h3 { margin-top: .5rem; }
 .pinout-drawing svg { display: block; width: 100%; min-width: 720px; color: #152434; }
 .pinout-drawing text { font-family: sans-serif; font-size: 15px; fill: #152434; }

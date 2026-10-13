@@ -15,7 +15,7 @@
     function writeText(node, text) {
       node.replaceChildren();
       // Build inline code nodes without interpreting the text as HTML.
-      const identifiers = /\b(?:(?:RCC|AFIO|GPIO[A-D]|PWR|BKP|SPI[12x]|USART[123x]|TIM[1234x])_[A-Z0-9_]+(?:\.[A-Z0-9_]+)?|(?:CNF|MODE)\d*(?:\[\d+:\d+\])?|ODR\d+|(?:USART[123]|SPI[12]|I2C[12]|TIM[1-4]|ADC[12]|ADC12)(?:_[A-Z0-9_]+)?|GPIO[A-D]|P[ABCD]\d+|CRL|CRH|SSM|SSI|PWREN|BKPEN|AFIOEN|USBEN|HSERDY|LSERDY|PLLRDY|ADCCLK|VDD|VDDA|VSS|VSSA|VOL|VOH)(?:\s*=\s*[01]+)?(?![A-Za-z0-9_])/g;
+      const identifiers = /\b(?:(?:RCC|AFIO|EXTI|GPIO[A-D]|PWR|BKP|SPI[12x]|USART[123x]|TIM[1234x])_[A-Z0-9_]+(?:\.[A-Z0-9_]+)?|EXTI\d+(?:_\d+)?(?:_IRQn|_IRQHandler)?|(?:CNF|MODE)\d*(?:\[\d+:\d+\])?|ODR\d+|(?:USART[123]|SPI[12]|I2C[12]|TIM[1-4]|ADC[12]|ADC12)(?:_[A-Z0-9_]+)?|GPIO[A-D]|P[ABCD]\d+|CRL|CRH|SSM|SSI|PWREN|BKPEN|AFIOEN|USBEN|HSERDY|LSERDY|PLLRDY|ADCCLK|VDD|VDDA|VSS|VSSA|VOL|VOH)(?:\s*=\s*[01]+)?(?![A-Za-z0-9_])/g;
       let offset = 0;
       for (const match of text.matchAll(identifiers)) {
         node.append(document.createTextNode(text.slice(offset, match.index)));
@@ -145,6 +145,7 @@
     for (const category of [...new Set(model.peripherals.map(p => p.group))]) {
       const section = html("details", undefined, form);
       html("summary", category, section);
+      if (category === "EXTI") html("p", "External interrupt/event lines 0–15 use GPIO inputs. Select one source pin per line. EXTI16–18 are internal sources, not GPIO pins.", section);
       const grid = html("div", undefined, section, "pinout-control-grid");
       for (const p of model.peripherals.filter(p => p.group === category)) {
         const field = html("fieldset", undefined, grid);
@@ -166,9 +167,10 @@
         toggle();
         if (p.id === "LSE") html("small", "Cold / backup-domain reset: off. Normal resets preserve RCC_BDCR.LSEON (RM0008 §7.3.9).", field);
         if (Object.keys(p.maps).length) {
-          const label = html("label", "Pin mapping ", field);
+          const label = html("label", p.group === "EXTI" ? "Source pin " : "Pin mapping ", field);
           const input = html("select", undefined, label);
-          for (const mapping of ["Default", ...Object.keys(p.maps)]) html("option", mapping, input).value = mapping;
+          for (const mapping of ["Default", ...Object.keys(p.maps)]) html("option", p.group === "EXTI" && mapping === "Default" ? p.signals[0][1] : mapping, input).value = mapping;
+          if (p.group === "EXTI") input.name = `${p.id}-mapping`;
           controls.push({ input, p, mapping: true });
           input.addEventListener("change", () => { state[p.id].mapping = input.value; update(); });
         }
@@ -239,6 +241,16 @@
         html("td", `${pin.conflict ? `Requested CNF=${pin.cnf || "—"}, MODE=${pin.mode || "—"}. ` : ""}${pin.notes}`, row);
       }
       if (!gpioPins.length) html("p", "No GPIO configuration entries for the current selections.", configurationResults);
+      if (plan.exti.length) {
+        html("h3", "EXTI pin assignments", configurationResults);
+        const routes = table(["EXTI line", "Source pin"]);
+        for (const route of plan.exti) {
+          const row = html("tr", undefined, routes);
+          row.dataset.exti = String(route.line);
+          html("td", `EXTI${route.line}`, row);
+          html("td", route.pin, row);
+        }
+      }
       if (plan.remaps.length) {
         html("h3", "AFIO routing", configurationResults);
         const list = html("ul", undefined, configurationResults);
@@ -281,6 +293,10 @@
       }
       if (cap.gpio) {
         feature("gpio", "Digital GPIO", true, "Supported", "Not supported", "Input/output use requires the GPIO port clock and releasing any hardware owner.");
+        const line = Number(selected.slice(2));
+        const active = owners.some(owner => owner.peripheral === `EXTI${line}`);
+        feature("exti", "External interrupt / event", true, `EXTI${line}${active ? " · reserved" : " available"}`, "Not supported",
+          `Select ${selected} through AFIO_EXTICR${Math.floor(line / 4) + 1}. Only one port can feed EXTI${line} at a time.`);
         feature("voltage", "5 V-tolerant input", cap.ft, "Supported", "Not supported", "Tolerance applies to digital inputs only. Analog inputs must stay between 0 V and VDDA.");
         feature("pwm", "Timer PWM output", cap.pwm, "Supported", "Not supported", cap.pwm
           ? "Use the listed timer channel. Some channels require remapping and releasing debug pins." : "No timer output is mapped to this pin.");
@@ -330,7 +346,7 @@
           item.dataset.active = String(enabled);
           html("code", entry.label, item);
           item.append(document.createTextNode(`${entry.optional ? " (optional)" : ""}${enabled ? " · active" : ""}`));
-          html("small", entry.mappings.includes("Default") ? "Default pin" : `Remap: ${entry.mappings.join(", ")}`, item);
+          html("small", entry.group === "EXTI" ? "GPIO source selected through AFIO_EXTICR" : entry.mappings.includes("Default") ? "Default pin" : `Remap: ${entry.mappings.join(", ")}`, item);
           if (entry.optional) html("small", entry.optional, item);
         }
       }

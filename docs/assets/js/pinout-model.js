@@ -76,6 +76,12 @@
     PA13: 34, PA14: 37, PA15: 38, PB3: 39, PB4: 40, PB5: 41, PB6: 42,
     PB7: 43, PB8: 45, PB9: 46,
   };
+  for (let line = 0; line < 16; line++) {
+    const pins = Object.keys(packagePins).filter(pin => /^P[ABCD]\d+$/.test(pin) && Number(pin.slice(2)) === line);
+    add(`EXTI${line}`, "EXTI", { IN: `PA${line}` },
+      Object.fromEntries(pins.filter(pin => pin !== `PA${line}`).map(pin => [pin, { IN: pin }])));
+    Object.assign(peripherals.at(-1), { optional: {}, roles: [] });
+  }
   const pwmPins = new Set(["PA0", "PA1", "PA2", "PA3", "PA6", "PA7", "PA8", "PA9", "PA10", "PA11", "PA15", "PB0", "PB1", "PB3", "PB4", "PB5", "PB6", "PB7", "PB8", "PB9", "PB10", "PB11", "PB13", "PB14", "PB15"]);
   function capabilities(pin) {
     const gpio = /^P[ABCD]\d+$/.test(pin);
@@ -101,7 +107,7 @@
         const map = p.maps[selection.mapping] || {};
         const pin = Object.hasOwn(map, signal) ? map[signal] : defaultPin;
         if (!pin) continue;
-        (pins[pin] ||= []).push({ peripheral: p.id, signal, label: p.group === "ADC" ? signal : `${p.id}_${signal}`, optional: p.optional[signal] || null });
+        (pins[pin] ||= []).push({ peripheral: p.id, signal, label: p.group === "ADC" ? signal : p.group === "EXTI" ? p.id : `${p.id}_${signal}`, optional: p.optional[signal] || null });
       }
     }
     for (const [pin, owners] of Object.entries(pins)) {
@@ -120,14 +126,14 @@
         if (defaultPin === pin) mappings.push("Default");
         for (const [name, map] of Object.entries(p.maps)) if (map[signal] === pin) mappings.push(name);
         if (!mappings.length) continue;
-        const label = p.group === "ADC" ? signal : `${p.id}_${signal}`;
+        const label = p.group === "ADC" ? signal : p.group === "EXTI" ? p.id : `${p.id}_${signal}`;
         result.push({ peripheral: p.id, group: p.group, signal, label, mappings, optional: p.optional[signal] || null });
       }
     }
     return result;
   }
   function functions(pin) {
-    return pinFunctions(pin).flatMap(entry => [
+    return pinFunctions(pin).flatMap(entry => entry.group === "EXTI" ? [entry.label] : [
       ...(entry.mappings.includes("Default") ? [entry.label] : []),
       ...(entry.mappings.some(mapping => mapping !== "Default") ? [`${entry.label} (remap)`] : []),
     ]);
@@ -140,6 +146,7 @@
     const input = { cnf: "01", mode: "00", configuration: "Floating input", notes: "" };
     const output = { cnf: "10", mode, configuration: "AF push-pull output", notes: `Output drive limit: ${speed} MHz.` };
     const hardware = (configuration, notes) => ({ cnf: null, mode: null, configuration, notes });
+    if (/^EXTI\d+$/.test(id)) return { ...input, notes: "Digital input for edge detection. Use an external pull-up or pull-down if the source can float." };
     if (id.startsWith("ADC channel")) return { cnf: "00", mode: "00", configuration: "Analog input", notes: "Analog voltage: 0–VDDA." };
     if (/^USART/.test(id)) return ["RX", "CTS"].includes(signal) ? input : output;
     if (/^SPI/.test(id)) {
@@ -177,6 +184,7 @@
     const ports = new Map();
     const notes = new Set();
     const remaps = [];
+    const exti = [];
     const settings = state.settings || { outputSpeed: "2", adc: "ADC1" };
     function clock(register, bit, bus, reason) {
       const key = `${register}.${bit}`;
@@ -187,6 +195,20 @@
     for (const p of peripherals) {
       const selection = state[p.id];
       if (!selection?.enabled) continue;
+      if (p.group === "EXTI") {
+        const line = Number(p.id.slice(4));
+        const pin = p.maps[selection.mapping]?.IN || `PA${line}`;
+        afio(`${p.id} source selection`);
+        remaps.push(`AFIO_EXTICR${Math.floor(line / 4) + 1}.EXTI${line} = ${pin[1].charCodeAt(0) - 65} (${pin})`);
+        if (pin[1] === "D") {
+          remaps.push("AFIO_MAPR.PD01_REMAP = 1 (PD0 / PD1 as GPIO)");
+          notes.add("PD0 / PD1 connect to the onboard HSE crystal. Disable HSE and disconnect the crystal circuit before using an external GPIO signal.");
+        }
+        exti.push({ line, pin });
+        notes.add("EXTI has no separate RCC clock-enable bit. Enable AFIO and the selected GPIO port before configuration.");
+        notes.add("One port can feed each EXTI line at a time. This planner reserves a digital input pin for EXTI and reports other pin assignments as conflicts.");
+        continue;
+      }
       if (["USART", "SPI", "I2C", "Timers"].includes(p.group) || p.id === "USB" || p.id === "CAN") {
         const bus = ["USART1", "SPI1", "TIM1"].includes(p.id) ? "APB2" : "APB1";
         clock(`RCC_${bus}ENR`, `${p.id}EN`, bus, p.id);
@@ -242,7 +264,7 @@
     return {
       clocks: [...clocks.values()].map(c => ({ ...c, reasons: [...c.reasons] })),
       ports: [...ports].sort(([a], [b]) => a.localeCompare(b)).map(([port, pins]) => ({ port, pins: [...pins] })),
-      rows, notes: [...notes], remaps, errors: assigned.errors,
+      rows, notes: [...notes], remaps, exti, errors: assigned.errors,
     };
   }
   const api = { peripherals, packagePins, capabilities, defaults, assignments, functions, pinFunctions, configurationSummary };

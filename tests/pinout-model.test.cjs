@@ -90,14 +90,14 @@ const row = (plan, signal) => plan.rows.find(r => r.signal === signal);
 
 test("pin function details distinguish default, remapped, and optional signals", () => {
   const pa4 = model.pinFunctions("PA4");
-  assert.deepEqual(pa4.map(f => f.peripheral), ["USART2", "ADC channel 4", "SPI1"]);
+  assert.deepEqual(pa4.map(f => f.peripheral), ["USART2", "ADC channel 4", "SPI1", "EXTI4"]);
   assert.deepEqual(pa4.find(f => f.signal === "CK").mappings, ["Default"]);
   assert.match(pa4.find(f => f.signal === "CK").optional, /synchronous/);
   assert.equal(pa4.find(f => f.signal === "ADC12_IN4").optional, null);
   const pb3 = model.pinFunctions("PB3");
   assert.deepEqual(pb3.find(f => f.label === "SPI1_SCK").mappings, ["Remapped"]);
   assert.deepEqual(pb3.find(f => f.label === "TIM2_CH2").mappings, ["Partial remap 1", "Full remap"]);
-  assert.deepEqual(model.functions("PB3"), ["SPI1_SCK (remap)", "TIM2_CH2 (remap)", "Debug_JTDO", "Trace_SWO"]);
+  assert.deepEqual(model.functions("PB3"), ["SPI1_SCK (remap)", "TIM2_CH2 (remap)", "Debug_JTDO", "Trace_SWO", "EXTI3"]);
   assert.deepEqual(model.pinFunctions("GND"), []);
 });
 
@@ -203,4 +203,51 @@ test("hardware-controlled pins need no GPIO clocks, and PC13 respects its output
   assert.ok(model.configurationSummary(state).remaps.some(r => r.includes("SWJ_CFG = 010")));
   state.Debug.enabled = false;
   assert.ok(model.configurationSummary(state).remaps.some(r => r.includes("SWJ_CFG = 100")));
+});
+
+test("each bonded GPIO has its numbered EXTI line with one selected source", () => {
+  for (const pin of Object.keys(model.packagePins).filter(pin => /^P[ABCD]\d+$/.test(pin))) {
+    const line = Number(pin.slice(2));
+    const id = `EXTI${line}`;
+    assert.ok(model.functions(pin).includes(id), pin);
+    const state = model.defaults();
+    state[id].enabled = true;
+    state[id].mapping = pin[1] === "A" ? "Default" : pin;
+    const assigned = model.assignments(state);
+    const routed = Object.entries(assigned.pins).filter(([, owners]) => owners.some(o => o.peripheral === id));
+    assert.deepEqual(routed.map(([pin]) => pin), [pin]);
+    const plan = model.configurationSummary(state);
+    assert.deepEqual(plan.exti, [{ line, pin }]);
+    assert.ok(clocks(plan).includes("RCC_APB2ENR.AFIOEN"));
+    assert.ok(clocks(plan).includes(`RCC_APB2ENR.IOP${pin[1]}EN`));
+    assert.ok(plan.remaps.includes(`AFIO_EXTICR${Math.floor(line / 4) + 1}.EXTI${line} = ${pin[1].charCodeAt(0) - 65} (${pin})`));
+    assert.deepEqual([row(plan, id).cnf, row(plan, id).mode], ["01", "00"]);
+  }
+  assert.deepEqual(model.pinFunctions("NRST"), []);
+  const state = model.defaults();
+  state.EXTI0.enabled = true;
+  state.EXTI0.mapping = "PB0";
+  assert.equal(model.assignments(state).pins.PA0, undefined);
+  assert.equal(model.assignments(state).pins.PB0[0].label, "EXTI0");
+});
+
+test("EXTI input reservations report ADC, debug, and oscillator pin conflicts", () => {
+  const state = model.defaults();
+  state.EXTI4.enabled = true;
+  state["ADC channel 4"].enabled = true;
+  assert.ok(model.assignments(state).errors.some(e => e.pin === "PA4"));
+  state.EXTI3.enabled = true;
+  state.EXTI3.mapping = "PB3";
+  assert.ok(model.assignments(state).errors.some(e => e.pin === "PB3"));
+  state.Debug.mapping = "SWD only";
+  assert.ok(!model.assignments(state).errors.some(e => e.pin === "PB3"));
+  state.EXTI0.enabled = true;
+  state.EXTI0.mapping = "PD0";
+  assert.ok(model.assignments(state).errors.some(e => e.pin === "PD0"));
+  const plan = model.configurationSummary(state);
+  assert.ok(plan.remaps.some(r => r.includes("PD01_REMAP = 1")));
+  assert.ok(plan.notes.some(n => n.includes("onboard HSE crystal")));
+  state.HSE.enabled = false;
+  assert.ok(!model.assignments(state).errors.some(e => e.pin === "PD0"));
+  assert.deepEqual(model.configurationSummary(model.defaults()).exti, []);
 });
