@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2026 Phyxor Microsystems
+ * SPDX-FileContributor: Pablo Palazon
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+body:has(#interrupt-explorer) .md-content { min-width: 0; }
+#interrupt-explorer {
+  --irq-border: var(--md-default-fg-color--lighter);
+  --irq-soft: var(--md-default-fg-color--lightest);
+  --irq-accent: var(--md-accent-fg-color);
+  min-width: 0;
+  color: var(--md-default-fg-color);
+  font-size: 0.75rem;
+}
+#interrupt-explorer [hidden] { display: none !important; }
+#interrupt-explorer .irq-intro { margin-bottom: 1rem; }
+#interrupt-explorer .irq-intro p { margin: 0.25rem 0; }
+#interrupt-explorer .irq-target { color: var(--md-default-fg-color--light); font-size: 0.65rem; }
+#interrupt-explorer .irq-layout { display: grid; grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr); gap: 1rem; align-items: start; }
+#interrupt-explorer .irq-browser { position: sticky; top: 4rem; border: 1px solid var(--irq-border); border-radius: 0.3rem; padding: 0.7rem; min-width: 0; }
+#interrupt-explorer .irq-control { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.6rem; font-size: 0.7rem; }
+#interrupt-explorer input[type="search"],
+#interrupt-explorer select { width: 100%; min-width: 0; border: 1px solid var(--irq-border); border-radius: 0.2rem; padding: 0.4rem; color: var(--md-default-fg-color); background: var(--md-default-bg-color); font: inherit; }
+#interrupt-explorer button { border: 1px solid var(--irq-border); border-radius: 0.2rem; padding: 0.4rem 0.6rem; color: var(--md-default-fg-color); background: var(--md-default-bg-color); font: inherit; text-align: left; cursor: pointer; }
+#interrupt-explorer button:hover:not(:disabled) { background: var(--irq-soft); }
+#interrupt-explorer button:disabled { opacity: 0.5; cursor: default; }
+#interrupt-explorer :is(button, input, select, summary, a):focus-visible { outline: 2px solid var(--irq-accent); outline-offset: 2px; }
+#interrupt-explorer .irq-count { margin: 0.5rem 0; color: var(--md-default-fg-color--light); font-size: 0.65rem; }
+#interrupt-explorer .irq-event-list { display: grid; gap: 0.35rem; max-height: calc(100vh - 14rem); overflow-y: auto; padding: 0.15rem; }
+#interrupt-explorer .irq-event { display: grid; gap: 0.25rem; width: 100%; min-width: 0; padding: 0.5rem; }
+#interrupt-explorer .irq-event[aria-pressed="true"] { border-color: var(--irq-accent); border-left: 3px solid var(--irq-accent); background: var(--irq-soft); }
+#interrupt-explorer .irq-event-title { font-weight: 600; font-size: 0.7rem; }
+#interrupt-explorer .irq-event-route { color: var(--md-default-fg-color--light); font-size: 0.6rem; overflow-wrap: anywhere; }
+#interrupt-explorer .irq-content { min-width: 0; display: grid; gap: 1rem; }
+#interrupt-explorer .irq-detail,
+#interrupt-explorer .irq-simulator { border: 1px solid var(--irq-border); border-radius: 0.3rem; padding: 1rem; min-width: 0; }
+#interrupt-explorer h2 { margin-top: 0; font-size: 1.1rem; }
+#interrupt-explorer h3 { font-size: 0.8rem; margin: 1rem 0 0.5rem; }
+#interrupt-explorer .irq-eyebrow { margin: 0 0 0.3rem; color: var(--md-default-fg-color--light); font-size: 0.65rem; }
+#interrupt-explorer code { color: var(--md-default-fg-color); background: var(--irq-soft); font-size: 0.65rem; overflow-wrap: anywhere; white-space: normal; }
+#interrupt-explorer .irq-route { display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; padding: 0.7rem; border-left: 3px solid var(--irq-accent); background: var(--irq-soft); }
+#interrupt-explorer .irq-handler { width: 100%; font-size: 0.8rem; font-weight: 600; }
+#interrupt-explorer .irq-handler-label { width: 100%; font-size: 0.7rem; font-weight: 600; }
+#interrupt-explorer .irq-registers { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 0.6rem; margin: 1rem 0; }
+#interrupt-explorer .irq-registers dt { font-weight: 600; margin: 0; }
+#interrupt-explorer .irq-registers dd { margin: 0; display: grid; justify-items: start; gap: 0.3rem; min-width: 0; }
+#interrupt-explorer .irq-nvic-reference { display: grid; justify-items: start; gap: 0.15rem; min-width: 0; }
+#interrupt-explorer .irq-register-reference { font-size: 0.55rem; color: var(--md-default-fg-color--light); background: none; }
+#interrupt-explorer .irq-help { color: var(--md-default-fg-color--light); font-size: 0.65rem; }
+#interrupt-explorer .irq-reference { display: inline-block; font-size: 0.7rem; margin: 0.3rem 0; }
+#interrupt-explorer .irq-related { border: 0; border-top: 1px solid var(--irq-border); margin-top: 0.8rem; padding-top: 0.6rem; background: none; box-shadow: none; }
+#interrupt-explorer .irq-related summary { padding-left: 0.5rem; color: var(--md-default-fg-color); background: var(--irq-soft); cursor: pointer; font-size: 0.7rem; }
+#interrupt-explorer .irq-related summary::before { display: none; }
+#interrupt-explorer .irq-related-list { display: grid; gap: 0.3rem; margin-top: 0.6rem; max-height: 13rem; overflow-y: auto; padding: 0.15rem; }
+#interrupt-explorer .irq-related-list button { font-size: 0.65rem; }
+#interrupt-explorer .irq-sim-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; border: 1px solid var(--irq-border); padding: 0.7rem; margin: 0.8rem 0; min-width: 0; }
+#interrupt-explorer .irq-sim-controls legend { padding: 0 0.3rem; font-size: 0.7rem; }
+#interrupt-explorer .irq-toggle { display: flex; align-items: start; gap: 0.4rem; font-size: 0.65rem; }
+#interrupt-explorer .irq-toggle input { margin-top: 0.15rem; accent-color: var(--irq-accent); flex-shrink: 0; }
+#interrupt-explorer .irq-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+#interrupt-explorer .irq-actions button { font-size: 0.65rem; }
+#interrupt-explorer .irq-result { padding: 0.7rem; background: var(--irq-soft); border-left: 3px solid var(--irq-border); font-size: 0.7rem; }
+#interrupt-explorer .irq-result[data-ready="true"] { border-left-color: var(--irq-accent); }
+#interrupt-explorer .irq-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; list-style: none; padding: 0; margin: 0.8rem 0; counter-reset: irq-stage; }
+#interrupt-explorer .irq-flow li { margin: 0; padding: 0.5rem; border: 1px solid var(--irq-border); min-width: 0; counter-increment: irq-stage; }
+#interrupt-explorer .irq-flow li::before { content: counter(irq-stage); display: block; font-size: 0.55rem; color: var(--md-default-fg-color--light); }
+#interrupt-explorer .irq-flow li[data-on="true"] { background: var(--irq-soft); border-bottom-width: 3px; }
+#interrupt-explorer .irq-stage-title { display: block; font-size: 0.65rem; font-weight: 600; }
+#interrupt-explorer .irq-stage-value { display: block; font-size: 0.6rem; color: var(--md-default-fg-color--light); }
+#interrupt-explorer .irq-state-registers { font-family: var(--md-code-font-family); font-size: 0.65rem; }
+@media (max-width: 76.25em) {
+  #interrupt-explorer .irq-layout { grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr); gap: 0.6rem; }
+}
+@media (max-width: 48em) {
+  #interrupt-explorer .irq-layout { grid-template-columns: minmax(0, 1fr); }
+  #interrupt-explorer .irq-browser { position: static; }
+  #interrupt-explorer .irq-event-list { max-height: 13rem; }
+  #interrupt-explorer .irq-detail, #interrupt-explorer .irq-simulator { padding: 0.7rem; }
+  #interrupt-explorer .irq-registers { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
+  #interrupt-explorer .irq-registers dd { margin-bottom: 0.5rem; }
+  #interrupt-explorer .irq-sim-controls { grid-template-columns: minmax(0, 1fr); }
+  #interrupt-explorer .irq-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -21,6 +21,7 @@ nav:
       - Memory Map: system/memory-map.md
       - Linker and startup: system/linker-startup.md
       - Reset and interrupts: system/reset-and-interrupts.md
+      - Interrupt Explorer: system/interrupt-dashboard.md
       - Clock Tree: system/clocks.md
       - Clock Calculator: system/clock-dashboard.md
   - Peripherals:
@@ -69,12 +70,15 @@ extra_javascript:
   - assets/js/pinout-dashboard.js
   - assets/js/clock-model.js
   - assets/js/clock-calculator.js
+  - assets/js/interrupt-model.js
+  - assets/js/interrupt-dashboard.js
 
 extra_css:
   - assets/css/diagrams.css
   - assets/css/navigation-dropdowns.css
   - assets/css/pinout-dashboard.css
   - assets/css/clock-calculator.css
+  - assets/css/interrupt-dashboard.css
 
 markdown_extensions:
   - pymdownx.highlight:
