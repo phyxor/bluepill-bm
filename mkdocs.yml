@@ -16,20 +16,18 @@ nav:
   - Home: index.md
   - Board:
     - Info: board/info.md
-    - Pinouts: board/pinout.md
   - System:
       - Memory Map: system/memory-map.md
-      - Linker and startup: system/linker-startup.md
-      - Reset and interrupts: system/reset-and-interrupts.md
-      - Interrupt Explorer: system/interrupt-dashboard.md
       - Clock Tree: system/clocks.md
-      - Clock Calculator: system/clock-dashboard.md
+      - Reset: system/reset.md
+      - Linker and startup: system/linker-startup.md
+      - Interrupts: system/interrupts.md
   - Peripherals:
       - GPIO: peripherals/gpio.md
+      - SysTick: peripherals/systick.md
       - ADC: peripherals/adc.md
       - Timers: peripherals/timers.md
       - USART: peripherals/usart.md
-      - SysTick: peripherals/systick.md
   - Dev models:
       - C development models: dev-models/abstraction-layers.md
       - Direct-register C: dev-models/direct-registers.md
@@ -46,6 +44,11 @@ nav:
       - STM32F103x8 Datasheet: refs/stm32f103x8-datasheet.pdf
       - STM32F103x8 Reference Manual: refs/stm32f103x8-reference.pdf
       - ARM Cortex-M3 User Guide: refs/arm-cortex-m3-generic-user-guide.pdf
+  - Dashboards:
+      - Pinouts: dashboards/pinout.md
+      - Clock Calculator: dashboards/clock-dashboard.md
+      - Interrupt Explorer: dashboards/interrupt-dashboard.md
+
 
 theme:
   name: material

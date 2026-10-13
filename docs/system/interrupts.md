@@ -1,52 +1,5 @@
 # Interrupts
 
-## Concepts
-
-- Event: A hardware or software action that can cause an interrupt.
-- Peripheral: A hardware unit, such as a timer or USART.
-- Status flag: A bit that records a peripheral event, even when its interrupt is disabled.
-- IRQ (interrupt request): A request for the processor to run a handler.
-- IRQ number (`IRQn`): The interrupt identifier. Core exceptions use negative CMSIS values.
-- ISR (interrupt service routine): The handler function that services an interrupt.
-- Interrupt source: The specific event that requests an interrupt.
-- Source enabled: The peripheral can send an IRQ for that event.
-- NVIC enabled: The NVIC permits delivery of that IRQ, subject to masks and priority.
-- Disabled: Delivery is blocked at the selected enable control. An active ISR continues.
-- Pending: The processor has an interrupt request that waits for service.
-- Active: An ISR started but did not return. Another ISR can interrupt it.
-- Mask: A control that blocks interrupt delivery without clearing the event.
-- Priority: The interrupt's urgency. A lower numeric value means higher priority.
-- Preemption: A higher-priority interrupt pauses the current handler.
-- Preemption priority: The priority field that decides whether preemption is allowed.
-- Subpriority: The field that orders pending interrupts with equal preemption priority.
-- Priority grouping: The split between preemption priority bits and subpriority bits.
-- Nested interrupts: One ISR runs while another ISR is paused.
-- Shared interrupt: Several sources use one vector. The ISR tests their status flags.
-- Vector: The handler address stored for an exception.
-- Vector table: The initial stack pointer followed by exception handler addresses.
-- Vector index: The entry number. A peripheral IRQ uses `IRQn + 16`.
-- Exception: A processor event that runs a handler, including interrupts and faults.
-- Fault: An exception caused by an execution error.
-- NMI (non-maskable interrupt): An interrupt that processor interrupt masks cannot block.
-- HardFault: A fault exception that `PRIMASK` and `BASEPRI` cannot block.
-- Thread mode: Normal execution, such as `main()`.
-- Handler mode: Execution inside an exception handler.
-- Exception return: The processor ends the handler and resumes interrupted execution.
-- Clear peripheral flag: Acknowledge the event with the peripheral's required register operation.
-- Clear pending: Remove the NVIC request. This does not clear the peripheral flag.
-- NVIC (Nested Vectored Interrupt Controller): Hardware that controls peripheral IRQ delivery.
-- SCB (System Control Block): Core registers that control exceptions and processor behavior.
-- SysTick: A core timer that can request periodic interrupts.
-- `PRIMASK`: A processor mask that blocks all exceptions with configurable priority.
-- `BASEPRI`: A processor mask that blocks configurable priorities at or below a chosen urgency.
-- `FAULTMASK`: A processor mask that blocks all exceptions except NMI.
-- `IPSR`: A processor register that identifies the current exception. Zero means thread mode.
-- CMSIS: Standard definitions and functions for access to Cortex-M hardware.
-- Register: A hardware location that stores control or status bits.
-- Field: One or more register bits with a specific purpose.
-- Macro: A named definition that the preprocessor substitutes before compilation.
-- Intrinsic: A compiler-provided operation, such as changing a processor mask.
-
 ## CMSIS NVIC registers
 
 The Nested Vectored Interrupt Controller (NVIC) controls peripheral interrupt
@@ -94,5 +47,3 @@ delivery
 | `__enable_fault_irq()`                        | Remove the FAULTMASK block.                                                                  |
 | `__get_FAULTMASK()`, `__set_FAULTMASK(value)` | Read or write that mask.                                                                     |
 | `__get_IPSR()`                                | Read the current exception number.                                                           |
-
-## Interrupt table
