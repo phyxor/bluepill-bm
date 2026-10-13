@@ -20,6 +20,7 @@ nav:
       - Memory Map: system/memory-map.md
       - Clock Tree: system/clocks.md
       - Reset: system/reset.md
+      - Power: system/power.md
       - Linker and startup: system/linker-startup.md
       - Interrupts: system/interrupts.md
   - Peripherals:
@@ -48,6 +49,7 @@ nav:
       - Pinouts: dashboards/pinout.md
       - Clock Calculator: dashboards/clock-dashboard.md
       - Interrupt Explorer: dashboards/interrupt-dashboard.md
+      - Low-power Dashboard: dashboards/low-power-dashboard.md
 
 
 theme:
@@ -75,6 +77,8 @@ extra_javascript:
   - assets/js/clock-calculator.js
   - assets/js/interrupt-model.js
   - assets/js/interrupt-dashboard.js
+  - assets/js/power-model.js
+  - assets/js/low-power-dashboard.js
 
 extra_css:
   - assets/css/diagrams.css
@@ -82,6 +86,7 @@ extra_css:
   - assets/css/pinout-dashboard.css
   - assets/css/clock-calculator.css
   - assets/css/interrupt-dashboard.css
+  - assets/css/low-power-dashboard.css
 
 markdown_extensions:
   - pymdownx.highlight:
