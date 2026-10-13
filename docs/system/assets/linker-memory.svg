@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="linker-memory-title linker-memory-desc" id="linker-memory-root">
+  <title id="linker-memory-title">Flash and SRAM layout</title>
+  <desc id="linker-memory-desc">The cmsis-blink memory sections show the copy of initialized data from Flash to SRAM, linker addresses, and opposing heap and stack growth.</desc>
+  <defs>
+      <style>#linker-memory-root { color: #2d3142; font-family: 'Geist', sans-serif; }
+      #linker-memory-root .diagram-container { width: 100%; overflow-x: auto; }
+      #linker-memory-root .heading { font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 600; fill: #2d3142; }
+      #linker-memory-root .section { font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; fill: #2d3142; text-anchor: middle; }
+      #linker-memory-root .address { font-family: 'Geist Mono', monospace; font-size: 11px; fill: #2d3142; }
+      #linker-memory-root .symbol { font-family: 'Geist Mono', monospace; font-size: 10px; fill: #4f5d75; }
+      #linker-memory-root .label { font-family: 'Geist Mono', monospace; font-size: 8px; fill: #4f5d75; text-anchor: middle; }
+      #linker-memory-root .note { font-family: 'Geist', sans-serif; font-size: 11px; fill: #4f5d75; }
+      #linker-memory-root .band { stroke: #4f5d75; stroke-width: 1; }
+      #linker-memory-root .connector { fill: none; stroke: #4f5d75; stroke-width: 1.5; marker-end: url(#linker-memory-arrow); }
+      #linker-memory-root .copy { fill: none; stroke: #bf4520; stroke-width: 2; marker-end: url(#linker-memory-copy-arrow); }
+      #linker-memory-root .diagram-container { overflow-x: visible; }</style>
+    <marker id="linker-memory-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#4f5d75"/></marker>
+    <marker id="linker-memory-copy-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#bf4520"/></marker>
+  </defs>
+  <rect width="1280" height="720" fill="#f5f5f5"/>
+
+  <!-- Low addresses are at the top. Connectors precede section bands. -->
+  <path class="copy" d="M480 352 H632 Q640 352 640 344 V168 Q640 160 648 160 H800"/>
+  <line class="connector" x1="768" y1="280" x2="768" y2="368"/>
+  <line class="connector" x1="768" y1="560" x2="768" y2="448"/>
+  <line class="connector" x1="208" y1="128" x2="208" y2="568"/>
+
+  <text class="heading" x="240" y="84">Flash · 64 KiB</text>
+  <text class="heading" x="800" y="84">SRAM · 20 KiB</text>
+
+  <!-- Section colors are explicit, as requested for this memory schematic. -->
+  <rect class="band" x="240" y="128" width="240" height="64" fill="#ececec"/>
+  <rect class="band" x="240" y="192" width="240" height="64" fill="#dce7f2"/>
+  <rect class="band" x="240" y="256" width="240" height="64" fill="#e8e1ef"/>
+  <rect class="band" x="240" y="320" width="240" height="64" fill="#f1dccf"/>
+  <rect class="band" x="240" y="384" width="240" height="192" fill="#f5f5f5"/>
+  <text class="section" x="360" y="164">.isr_vector · 236 B</text>
+  <text class="section" x="360" y="228">.text · 868 B</text>
+  <text class="section" x="360" y="292">.rodata · 16 B</text>
+  <text class="section" x="360" y="356">.data · 4 B</text>
+  <text class="section" x="360" y="484">Unused · 64,412 B</text>
+
+  <rect class="band" x="800" y="128" width="240" height="64" fill="#f1dccf"/>
+  <rect class="band" x="800" y="192" width="240" height="64" fill="#dce8d7"/>
+  <rect class="band" x="800" y="256" width="240" height="64" fill="#ececec"/>
+  <rect class="band" x="800" y="320" width="240" height="192" fill="#f5f5f5"/>
+  <rect class="band" x="800" y="512" width="240" height="64" fill="#ececec"/>
+  <text class="section" x="920" y="164">.data · 4 B</text>
+  <text class="section" x="920" y="228">.bss · 0 B</text>
+  <text class="section" x="920" y="292">Heap · 512 B min.</text>
+  <text class="section" x="920" y="420">Free · 18,936 B</text>
+  <text class="section" x="920" y="548">Stack · 1,024 B min.</text>
+
+  <text class="address" x="40" y="128">0x08000000</text>
+  <text class="symbol" x="40" y="144">g_pfnVectors</text>
+  <text class="address" x="40" y="192">0x080000EC</text>
+  <text class="address" x="40" y="256">0x08000450</text>
+  <text class="address" x="40" y="320">0x08000460 · LMA</text>
+  <text class="symbol" x="40" y="336">_sidata = _etext</text>
+  <text class="address" x="40" y="384">0x08000464</text>
+  <text class="address" x="40" y="576">0x08010000</text>
+
+  <text class="address" x="1060" y="128">0x20000000 · VMA</text>
+  <text class="symbol" x="1060" y="144">_sdata</text>
+  <text class="address" x="1060" y="192">0x20000004</text>
+  <text class="symbol" x="1060" y="208">_edata = _sbss = _ebss</text>
+  <text class="address" x="1060" y="256">0x20000008</text>
+  <text class="symbol" x="1060" y="272">_end</text>
+  <text class="address" x="1060" y="320">0x20000208</text>
+  <text class="address" x="1060" y="512">0x20004C00</text>
+  <text class="symbol" x="1060" y="528">_estack − _Min_Stack_Size</text>
+  <text class="address" x="1060" y="576">0x20005000</text>
+  <text class="symbol" x="1060" y="592">_estack</text>
+
+  <rect x="532" y="324" width="64" height="20" fill="#f5f5f5"/>
+  <text class="label" x="564" y="336">COPY</text>
+  <rect x="552" y="196" width="76" height="20" fill="#f5f5f5"/>
+  <text class="label" x="590" y="208">LMA → VMA</text>
+  <rect x="684" y="292" width="72" height="20" fill="#f5f5f5"/>
+  <text class="label" x="720" y="304">HEAP GROWS</text>
+  <rect x="676" y="460" width="80" height="20" fill="#f5f5f5"/>
+  <text class="label" x="716" y="472">STACK GROWS</text>
+  <text class="label" x="124" y="452">ADDRESS +</text>
+
+  <text class="note" x="240" y="640">cmsis-blink · Schematic, not to scale · Addresses increase downward</text>
+  <text class="note" x="240" y="664">.bss occupies no bytes in this build. SRAM includes 4 B of alignment before the heap.</text>
+</svg>

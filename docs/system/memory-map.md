@@ -5,8 +5,8 @@ KiB SRAM).
 
 ## Memory map overview
 
-The [STM32F103x8 datasheet](../../refs/stm32f103x8-datasheet.pdf#page=34)
-contains the complete memory map, including peripherals.
+The [STM32F103x8 datasheet](../refs/stm32f103x8-datasheet.pdf#page=34) contains
+the complete memory map, including peripherals.
 
 ![STM32F103x8 memory map](assets/img-20261002-115335.png)
 
@@ -14,7 +14,7 @@ contains the complete memory map, including peripherals.
 
 The processor has a fixed memory map that provides up to 4 GiB of addressable
 memory. The memory map in the
-[ARM Cortex-M3 Generic User Guide](../../refs/arm-cortex-m3-generic-user-guide.pdf)
+[ARM Cortex-M3 Generic User Guide](../refs/arm-cortex-m3-generic-user-guide.pdf)
 can be found in sections 2.2 and 4.1:
 
 ![Cortex-M3 address-space diagram](assets/img-20261002-130624.png)

@@ -53,11 +53,11 @@ The linker places sections in this order:
 | `AT > FLASH`           | Sets the `LMA` region for an output section.                |
 | `.`                    | Is the current location counter.                            |
 
-## Startup file
+## Startup File
 
 The active startup file is `system/startup_stm32f103.c`.
 
-### Tasks to perform
+### Tasks to Perform
 
 - Implementing the vector table `.isr_vector`
 - Creating interrupt handlers (Default Handlers)
@@ -66,7 +66,7 @@ The active startup file is `system/startup_stm32f103.c`.
 - Transferring the `.data` section (From `FLASH` to `SRAM`)
 - Zeroing the `.bss` section (Initializing to `0`)
 
-### CPU execution flow
+### CPU Execution Flow
 
 With `BOOT0=0`, the CPU uses this reset sequence:
 
@@ -79,3 +79,7 @@ With `BOOT0=0`, the CPU uses this reset sequence:
 7. `Reset_Handler` calls `main`.
 
 `main` runs from Flash unless the linker places its code in `.ramfunc`.
+
+## Diagram Layout Example (`cmsis-blink`)
+
+![Flash and SRAM sections, load and runtime addresses, and heap and stack growth](assets/linker-memory.svg)
