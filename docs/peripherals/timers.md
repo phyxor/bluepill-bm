@@ -102,7 +102,7 @@ The current project starts from 8 MHz HSI with both APB prescalers equal to 1,
 so `TIM1`, `TIM2`, `TIM3`, and `TIM4` initially run from an 8 MHz timer clock.
 Recalculate timing values whenever the RCC clock tree changes.
 
-Use the [clock dashboard](../system/clock-dashboard.md#interrupt-targets) to
+Use the [clock dashboard](../dashboards/clock-dashboard.md) to
 calculate `PSC` and `ARR` from a target period and a custom clock
 configuration.
 

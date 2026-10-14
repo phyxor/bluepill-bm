@@ -43,7 +43,7 @@ Configure the pin in input mode
 
 Alternate functions connect pins to peripherals, such as USART, SPI, I2C, and
 timers. Each signal uses specific pins. Some signals can move to other pins
-through remapping. See the [STM32F103C8 pinout](../board/pinout.md) for pin
+through remapping. See the [STM32F103C8 pinout](../dashboards/pinout.md) for pin
 assignments and GPIO configuration.
 
 ## Physical Connections

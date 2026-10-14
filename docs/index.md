@@ -14,7 +14,7 @@ configure peripherals, and build applications.
 ## Getting Started
 
 1. Read the [board information](board/info.md) and
-   [pinout](board/pinout.md).
+   [pinout](dashboards/pinout.md).
 2. Build and test the [bare blink application](apps/bare-blink.md).
 3. Read [Build Process](environment/build.md) and
    [Flash and Debug](environment/flash-debug.md) before programming the board.

@@ -40,8 +40,8 @@ application enables the GPIOC peripheral clock:
 RCC_APB2ENR |= RCC_APB2ENR_IOPCEN;
 ```
 
-The clock-enable register is summarized in
-[Registers You Use Most](../peripherals/gpio.md#registers-you-use-most).
+See the [GPIO main registers](../peripherals/gpio.md#main-registers) for the
+registers that the peripheral clock enables.
 
 ## PC13 configuration
 
@@ -86,7 +86,7 @@ For an active-low LED:
 | High       | Off       |
 
 The GPIO reference page also summarizes the safer set/reset register, `BSRR`,
-in [Registers You Use Most](../peripherals/gpio.md#registers-you-use-most).
+in [Main registers](../peripherals/gpio.md#main-registers).
 
 ## Delay loop
 
