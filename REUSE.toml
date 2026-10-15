@@ -21,6 +21,7 @@ path = [
     "mkdocs.yml",
     "openocd/bluepill.cfg",
     "requirements.txt",
+    ".github/**/*.yml",
     "docs/**/*.svg",
     "docs/**/*.png",
     "docs/**/*.html",
