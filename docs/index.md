@@ -1,10 +1,3 @@
-<!--
-Copyright (C) 2026 Phyxor Microsystems
-SPDX-FileContributor: Pablo Palazon
-
-SPDX-License-Identifier: BSD-3-Clause
--->
-
 # Blue Pill Bare-Metal
 
 This site explains bare-metal development for the Blue Pill board with an
@@ -13,7 +6,7 @@ configure peripherals, and build applications.
 
 ## Getting Started
 
-1. Read the [board information](board/info.md) and
+1. Read the [board information](system/board-info.md) and
    [pinout](dashboards/pinout.md).
 2. Build and test the [bare blink application](apps/bare-blink.md).
 3. Read [Build Process](environment/build.md) and
@@ -35,10 +28,10 @@ configure peripherals, and build applications.
 2. Read the system documentation for the memory map, reset path, linker script,
    and startup code.
 3. Configure a peripheral and verify it with a small application.
-4. Build the firmware, flash it with an ST-Link probe, and debug it through SWD.
+4. Build the firmware, flash it with an ST-Link probe, and debug it through
+   SWD.
 
 ## Build, Flash, and Debug
-
 
 ```sh
 make
@@ -52,9 +45,8 @@ make APP=cmsis-blink debug-server
 
 ## Documentation Map
 
-- [Board](board/info.md): Board hardware and package pinout.
-- [System](system/memory-map.md): Memory, reset, startup, linker, and clock
-  documentation.
+- [System](system/memory-map.md): Board Info, Memory, reset, startup, linker,
+  and clock documentation.
 - [Peripherals](peripherals/gpio.md): GPIO, ADC, timers, USART, and SysTick.
 - [Development Models](dev-models/abstraction-layers.md): Direct-register C and
   CMSIS development.

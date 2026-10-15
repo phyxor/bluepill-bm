@@ -38,7 +38,7 @@ This lets me update or change versions quickly.
 Clone the repository and initialize its submodules:
 
 ```bash
-git clone https://github.com/ppalazon/bluepill-bm.git
+git clone https://github.com/phyxor/bluepill-bm.git
 cd bluepill-bm
 git submodule update --init --recursive
 ```
@@ -55,7 +55,8 @@ make APP=cmsis-dma-mem2mem flash
 
 The first part covers board initialization and a useful application.
 
-- [x] Collect datasheets and reference manuals for the STM32F103C microcontroller.
+- [x] Collect datasheets and reference manuals for the STM32F103C
+      microcontroller.
 - [x] Collect the Blue Pill board manual.
 - [x] Document the microcontroller memory map.
 - [x] Describe what happens after reset or power-on.

@@ -6,7 +6,8 @@
 site_name: Blue Pill Bare-Metal
 copyright: Copyright &copy; 2026 Phyxor Microsystems
 docs_dir: docs
-repo_url: https://github.com/ppalazon/bluepill-bm
+repo_name: phyxor/bluepill-bm
+repo_url: https://github.com/phyxor/bluepill-bm
 
 extra:
   generator: true
@@ -14,9 +15,8 @@ extra:
 
 nav:
   - Home: index.md
-  - Board:
-    - Info: board/info.md
   - System:
+      - Board Info: system/board-info.md
       - Memory Map: system/memory-map.md
       - Clock Tree: system/clocks.md
       - Reset: system/reset.md
