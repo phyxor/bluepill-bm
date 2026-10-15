@@ -11,6 +11,8 @@
 #include "stm32f1xx.h"
 
 void uart1_init(void);
+// Requires initialized USART1. Flushes stdout and waits for transmission to finish.
+void uart1_flush(void);
 void uart2_init(void);
 uint16_t compute_uart_bd(uint32_t periph_clk, uint32_t baudrate);
 

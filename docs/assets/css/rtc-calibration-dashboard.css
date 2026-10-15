@@ -1,0 +1,63 @@
+/* Copyright (C) 2026 Phyxor Microsystems
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+body:has(#rtc-calibration-dashboard) .md-content { min-width: 0; }
+#rtc-calibration-dashboard { --rtc-border: var(--md-default-fg-color--lighter); min-width: 0; }
+#rtc-calibration-dashboard .rtc-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+#rtc-calibration-dashboard button {
+  padding: .4rem .6rem; border: 1px solid var(--rtc-border); border-radius: .2rem;
+  color: var(--md-default-fg-color); background: var(--md-default-bg-color); cursor: pointer; font: inherit; font-size: .7rem;
+}
+#rtc-calibration-dashboard button:hover { background: var(--md-default-fg-color--lightest); }
+#rtc-calibration-dashboard .rtc-layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+#rtc-calibration-dashboard .rtc-form { display: grid; gap: .8rem; min-width: 0; }
+#rtc-calibration-dashboard fieldset { border: 1px solid var(--rtc-border); border-radius: .25rem; padding: .7rem; min-width: 0; }
+#rtc-calibration-dashboard legend { font-size: .8rem; padding: 0 .3rem; }
+#rtc-calibration-dashboard .rtc-control { display: grid; gap: .25rem; margin: 0 0 .8rem; font-size: .7rem; }
+#rtc-calibration-dashboard .rtc-control:last-child { margin-bottom: 0; }
+#rtc-calibration-dashboard input, #rtc-calibration-dashboard select {
+  width: 100%; min-width: 0; border: 1px solid var(--rtc-border); border-radius: .15rem;
+  padding: .35rem; font: inherit; color: var(--md-default-fg-color); background: var(--md-default-bg-color);
+}
+#rtc-calibration-dashboard small { display: block; color: var(--md-default-fg-color--light); font-size: .65rem; line-height: 1.5; }
+#rtc-calibration-dashboard [aria-invalid="true"] { border-color: #c62828; }
+#rtc-calibration-dashboard :is(input, select, button, .rtc-waveform-scroll):focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 2px; }
+#rtc-calibration-dashboard .rtc-results { min-width: 0; }
+#rtc-calibration-dashboard .rtc-results h2 { font-size: .9rem; margin: 1rem 0 .5rem; }
+#rtc-calibration-dashboard .rtc-status {
+  margin: 0; padding: .6rem .8rem; font-size: .75rem; border-left: .2rem solid #2e7d32;
+  background: var(--md-default-fg-color--lightest);
+}
+#rtc-calibration-dashboard .rtc-status[data-state="slow"],
+#rtc-calibration-dashboard .rtc-status[data-state="above-range"] { border-left-color: #d18900; }
+#rtc-calibration-dashboard .rtc-status[data-state="invalid"] { border-left-color: #c62828; }
+#rtc-calibration-dashboard .rtc-reference { font-size: .7rem; overflow-wrap: anywhere; }
+#rtc-calibration-dashboard .rtc-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin: 0; }
+#rtc-calibration-dashboard .rtc-metric { padding: .7rem; border: 1px solid var(--rtc-border); border-radius: .25rem; min-width: 0; }
+#rtc-calibration-dashboard dt { font-size: .7rem; }
+#rtc-calibration-dashboard dd { font-size: 1rem; margin: .25rem 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#rtc-calibration-dashboard .rtc-metric:has([data-metric="finalCal"]) { border: 2px solid var(--md-accent-fg-color); }
+#rtc-calibration-dashboard .rtc-range { display: grid; gap: .3rem; margin-top: 1rem; font-size: .7rem; }
+#rtc-calibration-dashboard meter { width: 100%; height: 1rem; }
+#rtc-calibration-dashboard .rtc-code { max-width: 100%; overflow-x: auto; }
+#rtc-calibration-dashboard .rtc-code code { font-size: .7rem; line-height: 1.6; }
+#rtc-calibration-dashboard .rtc-pulse-section { margin-top: 1.5rem; }
+#rtc-calibration-dashboard .rtc-pulse-section h2 { font-size: 1rem; }
+#rtc-calibration-dashboard .rtc-pulse-figure { width: 100%; max-width: 100%; box-sizing: border-box; margin: 1rem 0; border: 1px solid var(--rtc-border); border-radius: .25rem; padding: .7rem; }
+#rtc-calibration-dashboard .rtc-waveform-scroll { max-width: 100%; overflow-x: auto; }
+#rtc-calibration-dashboard .rtc-waveform { display: block; width: 100%; min-width: 840px; height: auto; }
+#rtc-calibration-dashboard .rtc-waveform text { fill: var(--md-default-fg-color); font: 15px var(--md-text-font-family, sans-serif); }
+#rtc-calibration-dashboard .rtc-waveform .rtc-wave-small { font-size: 13px; }
+#rtc-calibration-dashboard .rtc-wave-line { fill: none; stroke: var(--md-default-fg-color); stroke-width: 2; stroke-linejoin: round; }
+#rtc-calibration-dashboard .rtc-wave-calibrated { stroke: color-mix(in srgb, var(--md-accent-fg-color) 55%, var(--md-default-fg-color)); }
+#rtc-calibration-dashboard .rtc-wave-omission { fill: var(--md-accent-fg-color); fill-opacity: .13; }
+#rtc-calibration-dashboard .rtc-wave-boundary { stroke: var(--md-default-fg-color--light); stroke-width: 1; stroke-dasharray: 4 4; }
+#rtc-calibration-dashboard .rtc-wave-break-mask { fill: var(--md-default-bg-color); }
+#rtc-calibration-dashboard .rtc-pulse-figure figcaption { max-width: none; font-size: .7rem; font-style: normal; text-align: left; line-height: 1.6; margin-top: .6rem; }
+@media (max-width: 1000px) {
+  #rtc-calibration-dashboard .rtc-layout { grid-template-columns: minmax(0, 1fr); }
+  #rtc-calibration-dashboard .rtc-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  #rtc-calibration-dashboard .rtc-form, #rtc-calibration-dashboard .rtc-metrics { grid-template-columns: minmax(0, 1fr); }
+}

@@ -54,7 +54,7 @@ bool gpio_set(gpio_pin_t pin) {
         return false;
     }
 
-    port->BSRR = 1U << ((unsigned int)pin % 16U);
+    port->BSRR = 1U << (((unsigned int)pin % 16U) + 16U);
     return true;
 }
 
@@ -64,7 +64,7 @@ bool gpio_reset(gpio_pin_t pin) {
         return false;
     }
 
-    port->BSRR = 1U << (((unsigned int)pin % 16U) + 16U);
+    port->BSRR = 1U << ((unsigned int)pin % 16U);
     return true;
 }
 

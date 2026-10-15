@@ -138,7 +138,16 @@ clock_status_t clock_apply_system_config(const clock_system_config_t *config);
 // Apply default clock configuration
 clock_status_t clock_profile_reset(void);
 
-// Apply specific configuration for 72MHz and 48MHz using HSE
+// Apply profiles using nominal 8 MHz HSI: direct HSI or HSI /2 feeding PLL.
+clock_status_t clock_profile_hsi8_8mhz(void);
+clock_status_t clock_profile_hsi8_16mhz(void);
+clock_status_t clock_profile_hsi8_32mhz(void);
+clock_status_t clock_profile_hsi8_48mhz(void);
+
+// Apply profiles using an 8 MHz HSE crystal: direct HSE at 8 MHz, otherwise PLL.
+clock_status_t clock_profile_hse8_8mhz(void);
+clock_status_t clock_profile_hse8_16mhz(void);
+clock_status_t clock_profile_hse8_32mhz(void);
 clock_status_t clock_profile_hse8_72mhz(void);
 clock_status_t clock_profile_hse8_48mhz(void);
 

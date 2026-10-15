@@ -3,4 +3,5 @@ python = "3"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
+_.path = ["{{env.HOME}}/tools/arm/gdb-dap/bin"]
 _.python.venv = { path = ".venv", create = true }

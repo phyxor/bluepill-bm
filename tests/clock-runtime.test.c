@@ -17,12 +17,35 @@ SysTick_Type test_systick;
 
 static bool emulate_sysclk;
 static bool emulate_oscillators;
+static bool reject_one_wait_state;
+static bool reject_reduction_with_pll;
+static bool force_pll_latency_two;
+static bool verify_latency_before_pll;
+static uint32_t expected_pll_latency;
+static unsigned blocked_latency_reductions;
+static unsigned pll_start_checks;
 static uint32_t stalled_ready_mask;
 static uint32_t sysclk_writes[32];
 static unsigned sysclk_write_count;
 
 void test_modify_register(volatile uint32_t *reg, uint32_t clear, uint32_t set) {
+    uint32_t previous = *reg;
     *reg = (*reg & ~clear) | set;
+    if (reg == &test_flash.ACR && reject_one_wait_state && (*reg & FLASH_ACR_LATENCY) == 1u) {
+        *reg = (*reg & ~FLASH_ACR_LATENCY) | (previous & FLASH_ACR_LATENCY);
+    }
+    if (reg == &test_flash.ACR && reject_reduction_with_pll &&
+        (test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) != 0u &&
+        (*reg & FLASH_ACR_LATENCY) < (previous & FLASH_ACR_LATENCY)) {
+        ++blocked_latency_reductions;
+        *reg = (*reg & ~FLASH_ACR_LATENCY) | (previous & FLASH_ACR_LATENCY);
+    }
+    if (reg == &test_rcc.CR && verify_latency_before_pll && (previous & RCC_CR_PLLON) == 0u &&
+        (*reg & RCC_CR_PLLON) != 0u) {
+        assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_HSI);
+        assert((test_flash.ACR & FLASH_ACR_LATENCY) == expected_pll_latency);
+        ++pll_start_checks;
+    }
     if (emulate_oscillators && reg == &test_rcc.CR) {
         static const uint32_t on[] = {RCC_CR_HSION, RCC_CR_HSEON, RCC_CR_PLLON};
         static const uint32_t ready[] = {RCC_CR_HSIRDY, RCC_CR_HSERDY, RCC_CR_PLLRDY};
@@ -42,17 +65,20 @@ void test_modify_register(volatile uint32_t *reg, uint32_t clear, uint32_t set) 
         }
     }
     if (emulate_sysclk && reg == &test_rcc.CFGR) {
-        if ((clear & (RCC_CFGR_SW | RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 |
-                      RCC_CFGR_ADCPRE)) != 0u) {
-            assert((test_flash.ACR & FLASH_ACR_LATENCY) == 2u);
-        }
         uint32_t sw = (*reg & RCC_CFGR_SW) >> RCC_CFGR_SW_Pos;
         *reg = (*reg & ~RCC_CFGR_SWS) | (sw << RCC_CFGR_SWS_Pos);
+        if (force_pll_latency_two && (clear & RCC_CFGR_SW) != 0u && sw == CLOCK_SYS_PLL) {
+            test_flash.ACR = (test_flash.ACR & ~FLASH_ACR_LATENCY) | 2u;
+        }
         assert(sysclk_write_count < sizeof(sysclk_writes) / sizeof(sysclk_writes[0]));
         sysclk_writes[sysclk_write_count++] = *reg;
         /* Every intermediate state must keep APB1 and ADC within limits. */
         uint32_t saved_core = SystemCoreClock;
         SystemCoreClockUpdate();
+        uint32_t required_latency = SystemCoreClock <= 24000000u   ? 0u
+                                    : SystemCoreClock <= 48000000u ? 1u
+                                                                   : 2u;
+        assert((test_flash.ACR & FLASH_ACR_LATENCY) >= required_latency);
         assert(clock_get_pclk1_hz() <= 36000000u);
         assert(clock_get_adc_hz() <= 14000000u);
         SystemCoreClock = saved_core;
@@ -62,6 +88,13 @@ void test_modify_register(volatile uint32_t *reg, uint32_t clear, uint32_t set) 
 static void clear_registers(void) {
     emulate_sysclk = false;
     emulate_oscillators = false;
+    reject_one_wait_state = false;
+    reject_reduction_with_pll = false;
+    force_pll_latency_two = false;
+    verify_latency_before_pll = false;
+    expected_pll_latency = 0u;
+    blocked_latency_reductions = 0u;
+    pll_start_checks = 0u;
     stalled_ready_mask = 0u;
     sysclk_write_count = 0;
     memset(&test_rcc, 0, sizeof(test_rcc));
@@ -643,19 +676,31 @@ static void test_usb_clock_selection(void) {
 
 static void assert_hse8_profile(uint32_t hz) {
     assert(SystemCoreClock == hz);
-    assert(clock_get_pclk1_hz() == hz / 2u);
+    assert(clock_get_pclk1_hz() == (hz > 36000000u ? hz / 2u : hz));
     assert(clock_get_pclk2_hz() == hz);
     assert(clock_get_apb1_timer_hz() == hz);
     assert(clock_get_apb2_timer_hz() == hz);
-    assert(clock_get_adc_hz() == 12000000u);
-    assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_PLL);
-    assert((test_rcc.CFGR & RCC_CFGR_PLLSRC) != 0u);
-    assert((test_rcc.CFGR & RCC_CFGR_PLLXTPRE) == 0u);
-    assert((test_rcc.CFGR & RCC_CFGR_USBPRE) == (hz == 48000000u ? RCC_CFGR_USBPRE : 0u));
-    assert((test_flash.ACR & FLASH_ACR_LATENCY) == (hz == 72000000u ? 2u : 1u));
+    assert(clock_get_adc_hz() == (hz == 8000000u    ? 4000000u
+                                  : hz <= 32000000u ? 8000000u
+                                                    : 12000000u));
+    if (hz == 8000000u) {
+        assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_HSE);
+        assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == 0u);
+    } else {
+        assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_PLL);
+        assert((test_rcc.CFGR & RCC_CFGR_PLLSRC) != 0u);
+        assert((test_rcc.CFGR & RCC_CFGR_PLLXTPRE) == 0u);
+        assert(((test_rcc.CFGR & RCC_CFGR_PLLMULL) >> RCC_CFGR_PLLMULL_Pos) + 2u == hz / 8000000u);
+        assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == (RCC_CR_PLLON | RCC_CR_PLLRDY));
+    }
+    if (hz >= 48000000u) {
+        assert((test_rcc.CFGR & RCC_CFGR_USBPRE) == (hz == 48000000u ? RCC_CFGR_USBPRE : 0u));
+    }
+    assert((test_flash.ACR & FLASH_ACR_LATENCY) == (hz <= 24000000u   ? 0u
+                                                    : hz <= 48000000u ? 1u
+                                                                      : 2u));
     assert((test_flash.ACR & FLASH_ACR_PRFTBE) != 0u);
-    uint32_t cr =
-        RCC_CR_HSION | RCC_CR_HSIRDY | RCC_CR_HSEON | RCC_CR_HSERDY | RCC_CR_PLLON | RCC_CR_PLLRDY;
+    uint32_t cr = RCC_CR_HSION | RCC_CR_HSIRDY | RCC_CR_HSEON | RCC_CR_HSERDY;
     assert((test_rcc.CR & cr) == cr);
 }
 
@@ -664,10 +709,12 @@ static void test_hse8_profiles(void) {
         clock_status_t (*apply)(void);
         uint32_t hz;
     } profiles[] = {
-        {clock_profile_hse8_72mhz, 72000000u},
+        {clock_profile_hse8_8mhz, 8000000u},   {clock_profile_hse8_16mhz, 16000000u},
+        {clock_profile_hse8_32mhz, 32000000u}, {clock_profile_hse8_72mhz, 72000000u},
         {clock_profile_hse8_48mhz, 48000000u},
     };
-    for (unsigned i = 0; i < sizeof(profiles) / sizeof(profiles[0]); ++i) {
+    const unsigned profile_count = sizeof(profiles) / sizeof(profiles[0]);
+    for (unsigned i = 0; i < profile_count; ++i) {
         for (unsigned start = 0; start < 3; ++start) {
             clear_registers();
             test_rcc.CR = RCC_CR_HSION | RCC_CR_HSIRDY;
@@ -690,13 +737,19 @@ static void test_hse8_profiles(void) {
             emulate_oscillators = true;
             assert(profiles[i].apply() == CLOCK_OK);
             assert_hse8_profile(profiles[i].hz);
-            /* Reapplication and switching to the other profile must also work. */
-            sysclk_write_count = 0;
-            assert(profiles[i].apply() == CLOCK_OK);
-            assert_hse8_profile(profiles[i].hz);
-            sysclk_write_count = 0;
-            assert(profiles[1u - i].apply() == CLOCK_OK);
-            assert_hse8_profile(profiles[1u - i].hz);
+            /* Cover every profile pair, including reapplication and downclocking. */
+            for (unsigned next = 0; next < profile_count; ++next) {
+                sysclk_write_count = 0;
+                assert(profiles[i].apply() == CLOCK_OK);
+                assert_hse8_profile(profiles[i].hz);
+                const uint32_t usb_divider = test_rcc.CFGR & RCC_CFGR_USBPRE;
+                sysclk_write_count = 0;
+                assert(profiles[next].apply() == CLOCK_OK);
+                assert_hse8_profile(profiles[next].hz);
+                if (profiles[next].hz < 48000000u) {
+                    assert((test_rcc.CFGR & RCC_CFGR_USBPRE) == usb_divider);
+                }
+            }
             assert(test_rcc.APB1ENR == RCC_APB1ENR_TIM2EN);
             assert(test_rcc.APB2ENR == RCC_APB2ENR_ADC1EN);
             assert(test_rcc.BDCR ==
@@ -725,6 +778,11 @@ static void test_hse8_profiles(void) {
             emulate_sysclk = true;
             emulate_oscillators = true;
             stalled_ready_mask = stalled[stage];
+            if (profiles[i].hz == 8000000u && stalled[stage] == RCC_CR_PLLRDY) {
+                assert(profiles[i].apply() == CLOCK_OK);
+                assert_hse8_profile(profiles[i].hz);
+                continue;
+            }
             assert(profiles[i].apply() == CLOCK_TIMEOUT);
             assert(SystemCoreClock == HSI_VALUE);
             assert((test_rcc.CFGR & RCC_CFGR_SW) == RCC_CFGR_SW_HSI);
@@ -735,6 +793,129 @@ static void test_hse8_profiles(void) {
                 assert((test_rcc.CR & RCC_CR_PLLRDY) == 0u);
             }
         }
+    }
+}
+
+static void assert_hsi8_profile(uint32_t hz) {
+    assert(SystemCoreClock == hz);
+    assert(clock_get_pclk1_hz() == (hz > 36000000u ? hz / 2u : hz));
+    assert(clock_get_pclk2_hz() == hz);
+    assert(clock_get_apb1_timer_hz() == hz);
+    assert(clock_get_apb2_timer_hz() == hz);
+    assert(clock_get_adc_hz() == (hz == 8000000u    ? 4000000u
+                                  : hz <= 32000000u ? 8000000u
+                                                    : 12000000u));
+    assert((test_rcc.CR & (RCC_CR_HSION | RCC_CR_HSIRDY)) == (RCC_CR_HSION | RCC_CR_HSIRDY));
+    if (hz == 8000000u) {
+        assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_HSI);
+        assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == 0u);
+    } else {
+        assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_PLL);
+        assert((test_rcc.CFGR & (RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE)) == 0u);
+        assert(((test_rcc.CFGR & RCC_CFGR_PLLMULL) >> RCC_CFGR_PLLMULL_Pos) + 2u == hz / 4000000u);
+        assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == (RCC_CR_PLLON | RCC_CR_PLLRDY));
+    }
+    assert((test_flash.ACR & FLASH_ACR_LATENCY) == (hz <= 24000000u ? 0u : 1u));
+    assert((test_flash.ACR & FLASH_ACR_PRFTBE) != 0u);
+}
+
+static void test_hsi8_profiles(void) {
+    static const struct {
+        clock_status_t (*apply)(void);
+        uint32_t hz;
+        uint32_t latency;
+    } profiles[] = {
+        {clock_profile_hsi8_8mhz, 8000000u, 0u},
+        {clock_profile_hsi8_16mhz, 16000000u, 0u},
+        {clock_profile_hsi8_32mhz, 32000000u, 1u},
+        {clock_profile_hsi8_48mhz, 48000000u, 1u},
+    };
+    static const struct {
+        clock_status_t (*apply)(void);
+        uint32_t hz;
+    } hse_profiles[] = {
+        {clock_profile_hse8_8mhz, 8000000u},   {clock_profile_hse8_16mhz, 16000000u},
+        {clock_profile_hse8_32mhz, 32000000u}, {clock_profile_hse8_48mhz, 48000000u},
+        {clock_profile_hse8_72mhz, 72000000u},
+    };
+    for (unsigned i = 0u; i < sizeof(profiles) / sizeof(profiles[0]); ++i) {
+        clear_registers();
+        emulate_sysclk = true;
+        emulate_oscillators = true;
+        /* These profiles must start even without a working HSE oscillator. */
+        stalled_ready_mask = RCC_CR_HSERDY;
+        verify_latency_before_pll = true;
+        expected_pll_latency = profiles[i].latency;
+        test_rcc.CFGR = RCC_CFGR_USBPRE;
+        assert(profiles[i].apply() == CLOCK_OK);
+        assert_hsi8_profile(profiles[i].hz);
+        assert((test_rcc.CR & (RCC_CR_HSEON | RCC_CR_HSERDY)) == 0u);
+        assert((test_rcc.CFGR & RCC_CFGR_USBPRE) != 0u);
+        sysclk_write_count = 0u;
+        assert(profiles[i].apply() == CLOCK_OK);
+        assert_hsi8_profile(profiles[i].hz);
+
+        for (unsigned next = 0u; next < sizeof(profiles) / sizeof(profiles[0]); ++next) {
+            verify_latency_before_pll = false;
+            sysclk_write_count = 0u;
+            assert(profiles[next].apply() == CLOCK_OK);
+            assert_hsi8_profile(profiles[next].hz);
+            verify_latency_before_pll = true;
+            expected_pll_latency = profiles[i].latency;
+            sysclk_write_count = 0u;
+            assert(profiles[i].apply() == CLOCK_OK);
+            assert_hsi8_profile(profiles[i].hz);
+        }
+
+        for (unsigned start = 0u; start < sizeof(hse_profiles) / sizeof(hse_profiles[0]); ++start) {
+            clear_registers();
+            emulate_sysclk = true;
+            emulate_oscillators = true;
+            reject_reduction_with_pll = true;
+            test_rcc.APB1ENR = RCC_APB1ENR_TIM2EN;
+            test_rcc.APB2ENR = RCC_APB2ENR_ADC1EN;
+            test_rcc.BDCR = RCC_BDCR_LSEON | RCC_BDCR_LSERDY | RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSE;
+            test_rtc.PRLL = 32767u;
+            assert(hse_profiles[start].apply() == CLOCK_OK);
+            const uint32_t hse_state = test_rcc.CR & (RCC_CR_HSEON | RCC_CR_HSERDY);
+            const uint32_t usb_divider = test_rcc.CFGR & RCC_CFGR_USBPRE;
+            verify_latency_before_pll = true;
+            expected_pll_latency = profiles[i].latency;
+            sysclk_write_count = 0u;
+            assert(profiles[i].apply() == CLOCK_OK);
+            assert_hsi8_profile(profiles[i].hz);
+            assert((test_rcc.CR & (RCC_CR_HSEON | RCC_CR_HSERDY)) == hse_state);
+            assert((test_rcc.CFGR & RCC_CFGR_USBPRE) == usb_divider);
+            verify_latency_before_pll = false;
+            sysclk_write_count = 0u;
+            assert(hse_profiles[start].apply() == CLOCK_OK);
+            assert_hse8_profile(hse_profiles[start].hz);
+            assert(blocked_latency_reductions == 0u);
+            assert(test_rcc.APB1ENR == RCC_APB1ENR_TIM2EN);
+            assert(test_rcc.APB2ENR == RCC_APB2ENR_ADC1EN);
+            assert(test_rcc.BDCR ==
+                   (RCC_BDCR_LSEON | RCC_BDCR_LSERDY | RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_LSE));
+            assert(test_rtc.PRLL == 32767u);
+        }
+
+        static const uint32_t stalled[] = {RCC_CR_HSIRDY, RCC_CR_PLLRDY};
+        for (unsigned stage = 0u; stage < sizeof(stalled) / sizeof(stalled[0]); ++stage) {
+            clear_registers();
+            emulate_sysclk = true;
+            emulate_oscillators = true;
+            stalled_ready_mask = stalled[stage];
+            if (profiles[i].hz == 8000000u && stalled[stage] == RCC_CR_PLLRDY) {
+                assert(profiles[i].apply() == CLOCK_OK);
+                assert_hsi8_profile(profiles[i].hz);
+            } else {
+                assert(profiles[i].apply() == CLOCK_TIMEOUT);
+                assert(SystemCoreClock == HSI_VALUE);
+            }
+        }
+        clear_registers();
+        test_rcc.APB1ENR = RCC_APB1ENR_USBEN;
+        assert(profiles[i].apply() == CLOCK_IN_USE);
+        assert(test_rcc.CR == 0u && test_rcc.CFGR == 0u && test_flash.ACR == 0u);
     }
 }
 
@@ -1060,6 +1241,92 @@ static void test_systick_clock(void) {
     }
 }
 
+static void test_flash_latency_timeout(void) {
+    clear_registers();
+    test_rcc.CR = RCC_CR_HSION | RCC_CR_HSIRDY;
+    emulate_sysclk = true;
+    emulate_oscillators = true;
+    reject_one_wait_state = true;
+
+    assert(clock_profile_hse8_32mhz() == CLOCK_TIMEOUT);
+    /* Reject the profile before PLL starts if target latency cannot be configured. */
+    assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_HSI);
+    assert((test_rcc.CFGR & RCC_CFGR_HPRE) == RCC_CFGR_HPRE_DIV1);
+    assert((test_rcc.CR & (RCC_CR_PLLON | RCC_CR_PLLRDY)) == 0u);
+    assert((test_flash.ACR & FLASH_ACR_LATENCY) == 0u);
+    assert(SystemCoreClock == HSI_VALUE);
+}
+
+static void test_profile_flash_setup(void) {
+    static const struct {
+        clock_status_t (*apply)(void);
+        uint32_t hz;
+        uint32_t latency;
+    } profiles[] = {
+        {clock_profile_hse8_8mhz, 8000000u, 0u},   {clock_profile_hse8_16mhz, 16000000u, 0u},
+        {clock_profile_hse8_32mhz, 32000000u, 1u}, {clock_profile_hse8_48mhz, 48000000u, 1u},
+        {clock_profile_hse8_72mhz, 72000000u, 2u},
+    };
+    for (unsigned i = 0u; i < sizeof(profiles) / sizeof(profiles[0]); ++i) {
+        clear_registers();
+        /* Start on 72 MHz PLL with two wait states, then downclock and reapply. */
+        test_rcc.CR = RCC_CR_HSION | RCC_CR_HSIRDY | RCC_CR_HSEON | RCC_CR_HSERDY | RCC_CR_PLLON |
+                      RCC_CR_PLLRDY;
+        test_rcc.CFGR = RCC_CFGR_SW_PLL | RCC_CFGR_SWS_PLL | RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9 |
+                        RCC_CFGR_PPRE1_DIV2 | RCC_CFGR_ADCPRE_DIV6;
+        test_flash.ACR = 2u | FLASH_ACR_PRFTBE | FLASH_ACR_PRFTBS;
+        SystemCoreClockUpdate();
+        emulate_sysclk = true;
+        emulate_oscillators = true;
+        reject_reduction_with_pll = true;
+        verify_latency_before_pll = true;
+        expected_pll_latency = profiles[i].latency;
+        assert(profiles[i].apply() == CLOCK_OK);
+        assert_hse8_profile(profiles[i].hz);
+        sysclk_write_count = 0u;
+        assert(profiles[i].apply() == CLOCK_OK);
+        assert_hse8_profile(profiles[i].hz);
+        assert(blocked_latency_reductions == 0u);
+        assert(pll_start_checks == (profiles[i].hz == 8000000u ? 0u : 2u));
+    }
+
+    /* Reproduce the reported 16 MHz state and reject reductions while PLL runs. */
+    clear_registers();
+    test_rcc.CR =
+        RCC_CR_HSION | RCC_CR_HSIRDY | RCC_CR_HSEON | RCC_CR_HSERDY | RCC_CR_PLLON | RCC_CR_PLLRDY;
+    test_rcc.CFGR = RCC_CFGR_SW_PLL | RCC_CFGR_SWS_PLL | RCC_CFGR_PLLSRC;
+    test_flash.ACR = 2u | FLASH_ACR_PRFTBE | FLASH_ACR_PRFTBS;
+    SystemCoreClockUpdate();
+    emulate_sysclk = true;
+    emulate_oscillators = true;
+    reject_reduction_with_pll = true;
+    assert(clock_select_sysclk(CLOCK_SYS_PLL, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                               CLOCK_ADC_DIV2) == CLOCK_TIMEOUT);
+    assert(blocked_latency_reductions == 1u);
+    assert((test_flash.ACR & FLASH_ACR_LATENCY) == 2u);
+    sysclk_write_count = 0u;
+    blocked_latency_reductions = 0u;
+    verify_latency_before_pll = true;
+    expected_pll_latency = 0u;
+    assert(clock_profile_hse8_16mhz() == CLOCK_OK);
+    assert_hse8_profile(16000000u);
+    assert(blocked_latency_reductions == 0u && pll_start_checks == 1u);
+
+    /* Distinguish hardware overriding LATENCY from a rejected software reduction. */
+    clear_registers();
+    test_rcc.CR = RCC_CR_HSION | RCC_CR_HSIRDY;
+    emulate_sysclk = true;
+    emulate_oscillators = true;
+    force_pll_latency_two = true;
+    verify_latency_before_pll = true;
+    expected_pll_latency = 0u;
+    assert(clock_profile_hse8_16mhz() == CLOCK_TIMEOUT);
+    assert(pll_start_checks == 1u);
+    assert((test_rcc.CFGR & RCC_CFGR_SWS) == RCC_CFGR_SWS_PLL);
+    assert((test_flash.ACR & FLASH_ACR_LATENCY) == 2u);
+    assert(SystemCoreClock == 16000000u);
+}
+
 int main(void) {
     test_clock_queries();
     test_oscillator_operations();
@@ -1070,6 +1337,9 @@ int main(void) {
     test_sysclk_errors();
     test_usb_clock_selection();
     test_hse8_profiles();
+    test_hsi8_profiles();
+    test_flash_latency_timeout();
+    test_profile_flash_setup();
     test_system_configs();
     test_system_config_validation();
     test_reset_profile();

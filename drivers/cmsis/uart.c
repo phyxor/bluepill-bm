@@ -9,6 +9,7 @@
 #include "clock.h"
 #include "stm32f1xx.h"
 #include <stdint.h>
+#include <stdio.h>
 #define DBG_UART_BAUDRATE 115200
 
 static void uart1_write(int ch);
@@ -16,6 +17,12 @@ static void uart1_write(int ch);
 int board_putchar(int ch) {
     uart1_write(ch);
     return ch;
+}
+
+void uart1_flush(void) {
+    fflush(stdout);
+    // Finish the last frame after stdout sends its buffered bytes to USART1.
+    while ((USART1->SR & USART_SR_TC) == 0u) {}
 }
 
 uint16_t compute_uart_bd(uint32_t periph_clk, uint32_t baudrate) {

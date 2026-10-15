@@ -23,6 +23,7 @@ path = [
     "requirements.txt",
     "docs/**/*.svg",
     "docs/**/*.png",
+    "docs/**/*.html",
     "**/.clangd",
     "**/*.md"
 ]

@@ -35,6 +35,7 @@ nav:
       - CMSIS: dev-models/cmsis.md
   - Applications:
       - Bare blink: apps/bare-blink.md
+      - CMSIS clock measurement: apps/cmsis-clock-measure.md
   - Environment:
       - Development: environment/development.md
       - Build: environment/build.md
@@ -42,12 +43,14 @@ nav:
       - Documentation: environment/documentation.md
   - Reference:
       - Acronyms: reference/acronyms.md
+      - RTC Calibration (AN2604): refs/rtc-calibration-stm.pdf
       - STM32F103x8 Datasheet: refs/stm32f103x8-datasheet.pdf
       - STM32F103x8 Reference Manual: refs/stm32f103x8-reference.pdf
       - ARM Cortex-M3 User Guide: refs/arm-cortex-m3-generic-user-guide.pdf
   - Dashboards:
       - Pinouts: dashboards/pinout.md
       - Clock Calculator: dashboards/clock-dashboard.md
+      - RTC Calibration: dashboards/rtc-calibration.md
       - Interrupt Explorer: dashboards/interrupt-dashboard.md
       - Low-power Dashboard: dashboards/low-power-dashboard.md
 
@@ -75,6 +78,8 @@ extra_javascript:
   - assets/js/pinout-dashboard.js
   - assets/js/clock-model.js
   - assets/js/clock-calculator.js
+  - assets/js/rtc-calibration-model.js
+  - assets/js/rtc-calibration-dashboard.js
   - assets/js/interrupt-model.js
   - assets/js/interrupt-dashboard.js
   - assets/js/power-model.js
@@ -85,6 +90,7 @@ extra_css:
   - assets/css/navigation-dropdowns.css
   - assets/css/pinout-dashboard.css
   - assets/css/clock-calculator.css
+  - assets/css/rtc-calibration-dashboard.css
   - assets/css/interrupt-dashboard.css
   - assets/css/low-power-dashboard.css
 

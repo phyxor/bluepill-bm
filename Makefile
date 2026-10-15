@@ -72,7 +72,7 @@ $(ELF): $(OBJECTS) $(LINKER_SCRIPT)
 
 $(OBJECT_DIR)/%.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJECT_DIR)/%.o: %.s
 	mkdir -p $(dir $@)

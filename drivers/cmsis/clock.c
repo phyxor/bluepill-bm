@@ -308,10 +308,19 @@ static clock_status_t system_result(clock_status_t status) {
     return status;
 }
 
-clock_status_t clock_select_sysclk(clock_system_source_t source, clock_ahb_divider_t ahb_divider,
-                                   clock_apb_divider_t apb1_divider,
-                                   clock_apb_divider_t apb2_divider,
-                                   clock_adc_divider_t adc_divider) {
+static uint32_t flash_latency_for_sysclk(uint64_t sys_hz) {
+    return sys_hz <= 24000000u ? 0u : sys_hz <= 48000000u ? 1u : 2u;
+}
+
+static bool set_flash_latency(uint32_t latency, uint32_t timeout) {
+    MODIFY_REG(FLASH->ACR, FLASH_ACR_LATENCY, latency);
+    return wait_bits(&FLASH->ACR, FLASH_ACR_LATENCY, latency, timeout);
+}
+
+static clock_status_t select_sysclk(clock_system_source_t source, clock_ahb_divider_t ahb_divider,
+                                    clock_apb_divider_t apb1_divider,
+                                    clock_apb_divider_t apb2_divider,
+                                    clock_adc_divider_t adc_divider, bool reduce_latency) {
     static const uint16_t ahb[] = {1, 2, 4, 8, 16, 64, 128, 256, 512};
     static const uint16_t apb[] = {1, 2, 4, 8, 16};
     static const uint16_t adc[] = {2, 4, 6, 8};
@@ -379,11 +388,14 @@ clock_status_t clock_select_sysclk(clock_system_source_t source, clock_ahb_divid
     if (!wait_bits(&RCC->CR, ready, ready, timeout)) {
         return system_result(CLOCK_TIMEOUT);
     }
-    /* Maximum latency is safe for either source throughout the switch. */
+    /* Raise latency only when needed; retain the old value during downclocking. */
+    const uint32_t latency = flash_latency_for_sysclk(sys_hz);
+    const uint32_t current_latency = FLASH->ACR & FLASH_ACR_LATENCY;
+    const uint32_t transition_latency = current_latency > latency ? current_latency : latency;
     MODIFY_REG(FLASH->ACR, FLASH_ACR_LATENCY | FLASH_ACR_PRFTBE | FLASH_ACR_HLFCYA,
-               2u | FLASH_ACR_PRFTBE);
-    if (!wait_bits(&FLASH->ACR, FLASH_ACR_LATENCY | FLASH_ACR_PRFTBS, 2u | FLASH_ACR_PRFTBS,
-                   timeout)) {
+               transition_latency | FLASH_ACR_PRFTBE);
+    if (!wait_bits(&FLASH->ACR, FLASH_ACR_LATENCY | FLASH_ACR_PRFTBS,
+                   transition_latency | FLASH_ACR_PRFTBS, timeout)) {
         return system_result(CLOCK_TIMEOUT);
     }
     uint32_t mask = RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 | RCC_CFGR_ADCPRE;
@@ -408,11 +420,22 @@ clock_status_t clock_select_sysclk(clock_system_source_t source, clock_ahb_divid
     if (!wait_bits(&RCC->CFGR, mask, dividers, timeout)) {
         return system_result(CLOCK_TIMEOUT);
     }
-    /* Lower Flash latency only after the final clock and dividers are confirmed. */
-    uint32_t latency = sys_hz <= 24000000u ? 0u : sys_hz <= 48000000u ? 1u : 2u;
-    MODIFY_REG(FLASH->ACR, FLASH_ACR_LATENCY, latency);
-    return system_result(
-        wait_bits(&FLASH->ACR, FLASH_ACR_LATENCY, latency, timeout) ? CLOCK_OK : CLOCK_TIMEOUT);
+    /* Profile setup defers reductions until HSI is active and PLL is stopped. */
+    if (reduce_latency && transition_latency > latency && !set_flash_latency(latency, timeout)) {
+        return system_result(CLOCK_TIMEOUT);
+    }
+    const uint32_t expected_latency = reduce_latency ? latency : transition_latency;
+    /* Check after the switch without rewriting an already-configured latency. */
+    return system_result(wait_bits(&FLASH->ACR, FLASH_ACR_LATENCY, expected_latency, timeout)
+                             ? CLOCK_OK
+                             : CLOCK_TIMEOUT);
+}
+
+clock_status_t clock_select_sysclk(clock_system_source_t source, clock_ahb_divider_t ahb_divider,
+                                   clock_apb_divider_t apb1_divider,
+                                   clock_apb_divider_t apb2_divider,
+                                   clock_adc_divider_t adc_divider) {
+    return select_sysclk(source, ahb_divider, apb1_divider, apb2_divider, adc_divider, true);
 }
 
 static clock_status_t validate_system_config(const clock_system_config_t *c) {
@@ -471,8 +494,9 @@ static clock_status_t prepare_system_clock(void) {
     if (status != CLOCK_OK) {
         return status;
     }
-    status = clock_select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
-                                 CLOCK_ADC_DIV2);
+    /* Keep existing wait states until the clock switch and PLL shutdown finish. */
+    status = select_sysclk(CLOCK_SYS_HSI, CLOCK_AHB_DIV1, CLOCK_APB_DIV1, CLOCK_APB_DIV1,
+                           CLOCK_ADC_DIV2, false);
     if (status != CLOCK_OK) {
         return status;
     }
@@ -489,6 +513,16 @@ clock_status_t clock_apply_system_config(const clock_system_config_t *c) {
     status = prepare_system_clock();
     if (status != CLOCK_OK) {
         return status;
+    }
+    /* Program final wait states on HSI, before enabling or selecting PLL. */
+    uint32_t sys_hz = c->source == CLOCK_SYS_HSE ? HSE_VALUE : HSI_VALUE;
+    if (c->source == CLOCK_SYS_PLL) {
+        uint32_t input_hz =
+            c->pll_source == CLOCK_PLL_HSE ? HSE_VALUE / (uint32_t)c->hse_divider : HSI_VALUE / 2u;
+        sys_hz = input_hz * (uint32_t)c->multiplier;
+    }
+    if (!set_flash_latency(flash_latency_for_sysclk(sys_hz), CLOCK_DEFAULT_TIMEOUT_ITERATIONS)) {
+        return system_result(CLOCK_TIMEOUT);
     }
     /* Start HSE only for direct HSE or an HSE-fed PLL. */
     if (c->source == CLOCK_SYS_HSE ||
@@ -529,6 +563,116 @@ clock_status_t clock_profile_reset(void) {
     MODIFY_REG(RCC->CFGR, mask, 0u);
     return wait_bits(&RCC->CFGR, mask, 0u, CLOCK_DEFAULT_TIMEOUT_ITERATIONS) ? CLOCK_OK
                                                                              : CLOCK_TIMEOUT;
+}
+
+clock_status_t clock_profile_hsi8_8mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_HSI,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV2,
+    };
+    if (HSI_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hsi8_16mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_PLL,
+        .pll_source = CLOCK_PLL_HSI_DIV2,
+        .multiplier = CLOCK_PLL_MUL4,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV2,
+    };
+    if (HSI_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hsi8_32mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_PLL,
+        .pll_source = CLOCK_PLL_HSI_DIV2,
+        .multiplier = CLOCK_PLL_MUL8,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV4,
+    };
+    if (HSI_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hsi8_48mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_PLL,
+        .pll_source = CLOCK_PLL_HSI_DIV2,
+        .multiplier = CLOCK_PLL_MUL12,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV2,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV4,
+    };
+    if (HSI_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hse8_8mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_HSE,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV2,
+    };
+    if (HSE_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hse8_16mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_PLL,
+        .pll_source = CLOCK_PLL_HSE,
+        .hse_divider = CLOCK_PLL_HSE_DIV1,
+        .multiplier = CLOCK_PLL_MUL2,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV2,
+    };
+    if (HSE_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
+}
+
+clock_status_t clock_profile_hse8_32mhz(void) {
+    static const clock_system_config_t config = {
+        .source = CLOCK_SYS_PLL,
+        .pll_source = CLOCK_PLL_HSE,
+        .hse_divider = CLOCK_PLL_HSE_DIV1,
+        .multiplier = CLOCK_PLL_MUL4,
+        .ahb_divider = CLOCK_AHB_DIV1,
+        .apb1_divider = CLOCK_APB_DIV1,
+        .apb2_divider = CLOCK_APB_DIV1,
+        .adc_divider = CLOCK_ADC_DIV4,
+    };
+    if (HSE_VALUE != 8000000u) {
+        return CLOCK_INVALID_CONFIG;
+    }
+    return clock_apply_system_config(&config);
 }
 
 clock_status_t clock_profile_hse8_72mhz(void) {

@@ -6,8 +6,10 @@
  */
 
 #include "rtc.h"
+#include <stdio.h>
 
-#define RTC_LSE_PRESCALER 0x7FFFu
+#define RTC_LSE_PRESCALER 32765u
+#define RTC_INITIAL_CALIBRATION 64u
 #define RTC_WAIT_LIMIT 16000000u
 
 // Poll a hardware flag with a bounded wait so a clock failure cannot hang forever.
@@ -19,12 +21,6 @@ static bool rtc_wait_for_set(volatile uint32_t *reg, uint32_t mask) {
     }
 
     return false;
-}
-
-// Force the APB interface to copy the latest RTC register values from its clock domain.
-static bool rtc_wait_registers_synchronized(void) {
-    RTC->CRL &= ~RTC_CRL_RSF;
-    return rtc_wait_for_set(&RTC->CRL, RTC_CRL_RSF);
 }
 
 // Wait until the RTC finishes propagating the previous write to its clock domain.
@@ -42,7 +38,34 @@ static void rtc_disable_backup_writes(void) {
     PWR->CR &= ~PWR_CR_DBP;
 }
 
-// Divide the 32.768 kHz LSE clock into one RTC counter increment per second.
+bool rtc_synchronize(void) {
+    const bool backup_writes_enabled = (PWR->CR & PWR_CR_DBP) != 0u;
+    rtc_enable_backup_writes();
+
+    // Refresh the APB-visible registers without changing the RTC configuration.
+    RTC->CRL &= ~RTC_CRL_RSF;
+    const bool success = rtc_wait_for_set(&RTC->CRL, RTC_CRL_RSF);
+
+    if (!backup_writes_enabled) {
+        rtc_disable_backup_writes();
+    }
+    return success;
+}
+
+void rtc_clear_calibration(void) {
+    // Remove retained RTC calibration so the prescaler counts uncorrected LSE cycles.
+    rtc_enable_backup_writes();
+    BKP->RTCCR &= ~BKP_RTCCR_CAL;
+    rtc_disable_backup_writes();
+}
+
+void rtc_calibration(uint8_t calibration) {
+    rtc_enable_backup_writes();
+    MODIFY_REG(BKP->RTCCR, BKP_RTCCR_CAL, (uint32_t)calibration & BKP_RTCCR_CAL);
+    rtc_disable_backup_writes();
+}
+
+// AN2604: divide by 32766 and remove 64 pulses per 2^20 LSE cycles for nominal 1 Hz.
 static bool rtc_write_prescaler_1hz(void) {
     if (!rtc_wait_write_finished()) {
         return false;
@@ -53,7 +76,11 @@ static bool rtc_write_prescaler_1hz(void) {
     RTC->PRLL = RTC_LSE_PRESCALER;
     RTC->CRL &= ~RTC_CRL_CNF;
 
-    return rtc_wait_write_finished();
+    if (!rtc_wait_write_finished()) {
+        return false;
+    }
+    MODIFY_REG(BKP->RTCCR, BKP_RTCCR_CAL, RTC_INITIAL_CALIBRATION);
+    return (BKP->RTCCR & BKP_RTCCR_CAL) == RTC_INITIAL_CALIBRATION;
 }
 
 bool rtc_init(void) {
@@ -87,7 +114,7 @@ bool rtc_init(void) {
     RCC->BDCR |= RCC_BDCR_RTCEN;
 
     // Synchronize the APB-visible registers after enabling the RTC clock.
-    if (!rtc_wait_registers_synchronized()) {
+    if (!rtc_synchronize()) {
         rtc_disable_backup_writes();
         return false;
     }
@@ -182,4 +209,15 @@ uint32_t rtc_get_epoch_time(void) {
     } while (high_before != high_after);
 
     return (high_after << 16u) | low;
+}
+
+void rtc_print_state(void) {
+    printf("RTC state: RCC_CFGR=0x%08lx RCC_BDCR=0x%08lx RTC_CRL=0x%04lx\r\n",
+           (unsigned long)RCC->CFGR, (unsigned long)RCC->BDCR, (unsigned long)RTC->CRL);
+    printf("RTC prescaler: PRLH=0x%04lx PRLL=0x%04lx; nominal HCLK=%lu Hz\r\n",
+           (unsigned long)RTC->PRLH, (unsigned long)RTC->PRLL, (unsigned long)SystemCoreClock);
+    printf("RTC delivery: counter=%lu CRH=0x%04lx IRQ enabled=%lu pending=%lu PRIMASK=%lu\r\n",
+           (unsigned long)rtc_get_epoch_time(), (unsigned long)RTC->CRH,
+           (unsigned long)NVIC_GetEnableIRQ(RTC_IRQn), (unsigned long)NVIC_GetPendingIRQ(RTC_IRQn),
+           (unsigned long)__get_PRIMASK());
 }
